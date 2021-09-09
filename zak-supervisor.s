@@ -8,10 +8,6 @@
 
 GETIN_CHECKED = $e124
 Se544 = $e544
-ENDIRQ = $ea31
-RESET = $fce2
-
-LAST_DEVICE = $ba
 
 ; keys:
 
@@ -48,14 +44,6 @@ screen_rastertime_maximum = screen + 9 * 40 + 34
 screen_filename = screen + 9 * 40 + 11
 
 CHAR_CURSOR = $5f ; _
-
-Z90 = $90
-Z9d = $9d
-Zb7 = $b7
-Zb9 = $b9
-Zba = $ba
-Zbb = $bb
-Zbc = $bc
 
 .segment "CHARSET"
 
@@ -105,7 +93,7 @@ start:
 	ldx filename_length
 	beq :+
 	jsr load_music
-	ldx Z90
+	ldx ST
 	cpx #$40
 	beq :+
 	jmp start
