@@ -1,15 +1,17 @@
 .export start
 
-STARTADDRESS=$3000
-
 .include "c64.inc"
 .include "cbm_kernal.inc"
 .include "defines.inc"
 
 .macpack cbm
 
-PLOT_XXX = $e50a
-LAOD_XXX = $f49e
+GETIN_CHECKED = $e124
+Se544 = $e544
+ENDIRQ = $ea31
+RESET = $fce2
+
+LAST_DEVICE = $ba
 
 ; keys:
 
@@ -55,13 +57,20 @@ Zba = $ba
 Zbb = $bb
 Zbc = $bc
 
+.segment "CHARSET"
+
+charset:
+	.incbin "charset.bin"
+
+.code
+
 start:
-	lda #$97
+	lda #CTRL_COLOR_DARK_GRAY
 	jsr BSOUT
 	jsr CLRSCR
-	lda #$98
+	lda #CTRL_COLOR_MEDIUM_GRAY
 	jsr BSOUT
-	ldx #$1f
+	ldx #<((screen / $40) | (charset / $400))
 	stx VIC_VIDEO_ADR
 	ldx #COLOR_BLACK
 	stx VIC_BORDERCOLOR
@@ -82,7 +91,7 @@ start:
 	ldx #$09
 	ldy #$0b
 	clc
-	jsr PLOT_XXX
+	jsr PLOT
 	lda #CHAR_CURSOR
 	jsr BSOUT
 	ldx #$00
@@ -108,7 +117,7 @@ start:
 	ldx #$0b
 	ldy #$0f
 	clc
-	jsr PLOT_XXX
+	jsr PLOT
 	jsr read_hex_byte
 	sta init_music_a + 1
 	ldx #$10
@@ -124,7 +133,7 @@ start:
 	ldx #$0c
 	ldy #$0f
 	clc
-	jsr PLOT_XXX
+	jsr PLOT
 	jsr read_hex_byte
 	sta init_music_x + 1
 	ldx #39
@@ -140,7 +149,7 @@ start:
 	ldx #$0d
 	ldy #$0f
 	clc
-	jsr PLOT_XXX
+	jsr PLOT
 	jsr read_hex_byte
 	sta init_music_y + 1
 	ldx #39
@@ -156,7 +165,7 @@ start:
 	ldx #$0e
 	ldy #$23
 	clc
-	jsr PLOT_XXX
+	jsr PLOT
 	jsr read_one_or_two
 	bne L30ea
 	lda #$20
@@ -168,330 +177,6 @@ L30ec:	sta init_music
 :	sta COLOR_RAM + 14 * 40,x
 	dex
 	bpl :-
-	jmp start2
-
-	; padding, remove
-	.byte $00, $00, $00                         	; "..."
-
-last_hex_digit:	.byte $43                                   	; "C"
-
-; read hex digit, returns digit in A and last_hex_digit
-; returns $81 for return, $80 for backspace
-read_hex_digit:
-.scope
-	jsr GETIN_CHECKED
-	beq read_hex_digit
-	cmp #$30 ; '0'
-	bmi control
-	cmp #$3a ; ':'
-	bpl :+
-	sta last_hex_digit
-	sec
-	sbc #$30
-	rts
-:	cmp #$41	; 'A'
-	bmi read_hex_digit
-	cmp #$47	; 'G'
-	bpl read_hex_digit
-	sta last_hex_digit
-	sec
-	sbc #$37
-	rts
-control:
-	cmp #$0d
-	bne :+
-	lda #$81
-	rts
-:	cmp #$14
-	bne read_hex_digit
-	lda #$80
-	rts
-.endscope
-
-	; padding, remove
-	.byte $00, $00, $00, $00, $00, $00, $00     	; "......."
-
-backspace_with_cursor:
-	lda #$14 ; backspace
-	jsr BSOUT
-	lda #$14 ; backspace
-	jsr BSOUT
-	lda #CHAR_CURSOR ; '_'
-	jmp BSOUT
-
-	; padding, remove
-	.byte $00                                   	; "."
-
-bsout_with_cursor:
-	pha
-	lda #$14
-	jsr BSOUT
-	pla
-	jsr BSOUT
-	lda #CHAR_CURSOR
-	jmp BSOUT
-
-; TODO: move to bss
-filename_length:
-	.byte $00
-
-; filename is returned at filename, length at filename_length
-; cursor must be at correct position
-read_filename:
-.scope
-	jsr GETIN_CHECKED
-	cmp #$0d	; 13 .
-	beq return
-	cmp #$14	; 20 .
-	beq backspace
-	cmp #$20	; 32
-	bmi read_filename
-	cmp #$60	; 96 `
-	bpl read_filename
-	inc filename_length
-	ldx filename_length
-	cpx #$11	; 17 .
-	bne character
-	dec filename_length
-	bne read_filename
-character:
-	; TODO: use bsout_with_cursor
-	pha
-	lda #$14	; 20 .
-	jsr BSOUT
-	pla
-	jsr BSOUT
-	lda #CHAR_CURSOR
-	jsr BSOUT
-	jmp read_filename
-backspace:
-	dec filename_length
-	ldx filename_length
-	cpx #$ff	; 255 .
-	bne character
-	inc filename_length
-	beq read_filename
-return:
-	ldx filename_length
-	beq end
-convert_to_petscii:
-	lda screen_filename,x
-	cmp #$20	; 32
-	bpl :+
-	clc
-	adc #$40	; 64 @
-:	sta filename,x
-	dex
-	bpl convert_to_petscii
-end:
-	lda #$14	; 20 .
-	jmp BSOUT
-.endscope
-
-	; padding, remove
-	.byte $00, $00, $00                         	; "..."
-
-load_music:
-	; TODO: don't hardcode device 8
-	; TODO: use SETLFS, SETNAM
-	ldx #$08	; 8 .
-	stx Zba
-	ldx filename_length
-	stx Zb7
-	ldx #$01	; 1 .
-	stx Zb9
-	ldx #<filename
-	ldy #>filename
-	stx Zbb
-	sty Zbc
-	lda #$00	; 0 .
-	sta Z9d
-	jmp LAOD_XXX
-
-	; padding, remove
-	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
-	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
-	.byte $00, $00, $00, $00                    	; "...."
-
-filename:
-	.byte $32, $30, $43, $43, $20, $30, $30, $32	; "20CC 002"
-	.byte $2a, $5f, $5f, $20, $2f, $4d, $54, $4c	; "*__ /MTL"
-	.byte $5f, $00, $00, $00, $00, $00, $00     	; "_......"
-
-; TODO: move to bss and into read_hex_byte scope
-hex_byte:
-	.byte $00                                   	; "."
-
-read_hex_byte:
-.scope
-	lda #CHAR_CURSOR
-	jsr BSOUT
-read_first_digit:
-	jsr read_hex_digit
-	bmi read_first_digit
-	asl
-	asl
-	asl
-	asl
-	sta hex_byte
-	lda last_hex_digit
-	jsr bsout_with_cursor
-read_second_digit:
-	jsr read_hex_digit
-	bmi :+
-	ora hex_byte
-	sta hex_byte
-	lda last_hex_digit
-	jsr bsout_with_cursor
-	jmp read_return
-:	cmp #$81
-	beq read_second_digit
-	jsr backspace_with_cursor
-	jmp read_first_digit
-read_return:
-	jsr read_hex_digit
-	bpl read_return
-	cmp #$81	; 129 .
-	beq end
-	jsr backspace_with_cursor
-	lda #$f0	; 240 .
-	and hex_byte
-	sta hex_byte
-	jmp read_second_digit
-end:
-	lda #$14	; 20 .
-	jsr BSOUT
-	lda hex_byte
-	rts
-.endscope
-
-	; padding, remove
-	.byte $00                                   	; "."
-
-; TOOD: move to bss and into scope of read_hex_word
-hex_word:
-	.byte $10, $6c
-
-; reads hex word, returns in x/y
-read_hex_word:
-.scope
-	lda #CHAR_CURSOR
-	jsr BSOUT
-read_first_digit:
-	jsr read_hex_digit
-	bmi read_first_digit
-	asl
-	asl
-	asl
-	asl
-	sta hex_word
-	lda last_hex_digit
-	jsr bsout_with_cursor
-read_second_digit:
-	jsr read_hex_digit
-	bmi :+
-	ora hex_word
-	sta hex_word
-	lda last_hex_digit
-	jsr bsout_with_cursor
-	jmp read_third_digit
-:	cmp #$81
-	beq read_second_digit
-	jsr backspace_with_cursor
-	jmp read_first_digit
-read_third_digit:
-	jsr read_hex_digit
-	bmi :+
-	asl
-	asl
-	asl
-	asl
-	sta hex_word + 1
-	lda last_hex_digit
-	jsr bsout_with_cursor
-	jmp read_fourth_digit
-:	cmp #$81
-	beq read_third_digit
-	jsr backspace_with_cursor
-	lda #$f0
-	and hex_word
-	sta hex_word
-	jmp read_second_digit
-read_fourth_digit:
-	jsr read_hex_digit
-	bmi :+
-	ora hex_word + 1
-	sta hex_word + 1
-	lda last_hex_digit
-	jsr bsout_with_cursor
-	jmp read_return
-:	cmp #$81
-	beq read_fourth_digit
-	jsr backspace_with_cursor
-	jmp read_third_digit
-read_return:
-	jsr read_hex_digit
-	bpl read_return
-	cmp #$81
-	beq end
-	jsr backspace_with_cursor
-	lda #$f0
-	and hex_word + 1
-	sta hex_word + 1
-	jmp read_fourth_digit
-end:
-	lda #$14	; 20 .
-	jsr BSOUT
-	ldx hex_word
-	ldy hex_word + 1
-	rts
-.endscope
-
-	; padding, remove
-	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
-	.byte $00, $00                              	; ".."
-
-
-; TODO: move to bss, into scope of read_one_or_two
-one_or_two:
-	.byte $01                                   	; "."
-
-read_one_or_two:
-.scope
-	lda #CHAR_CURSOR
-	jsr BSOUT
-read_digit:
-	jsr GETIN_CHECKED
-	cmp #$31 ; '1'
-	beq :+
-	cmp #$32 ; '2'
-	bne read_digit
-:	pha
-	sec
-	sbc #$31	; 49 1
-	sta one_or_two
-	pla
-	jsr bsout_with_cursor
-read_return:
-	jsr GETIN_CHECKED
-	cmp #$0d
-	beq end
-	cmp #$14
-	bne read_return
-	jsr backspace_with_cursor
-	jmp read_digit
-end:
-	lda #$14
-	jsr BSOUT
-	lda one_or_two
-	rts
-.endscope
-
-	; padding, remove
-	.byte $00, $00, $00                         	; "..."
-
-; TODO: merge with start
-start2:
 	ldx #$27
 	lda #COLOR_MID_GRAY
 :	sta COLOR_RAM + 15 * 40,x
@@ -500,7 +185,7 @@ start2:
 	ldx #$0f
 	ldy #$11
 	clc
-	jsr PLOT_XXX
+	jsr PLOT
 	jsr read_hex_word
 	stx init_music + 2
 	sty init_music + 1
@@ -515,7 +200,7 @@ start2:
 	ldx #$11
 	ldy #$11
 	clc
-	jsr PLOT_XXX
+	jsr PLOT
 	jsr read_hex_word
 	stx play_music + 2
 	sty play_music + 1
@@ -788,25 +473,332 @@ not_return:
 	jmp RESET
 .endscope
 
-	; padding, remove
-	.byte $00, $00, $00, $00, $00, $00, $00     	; "......."
+.bss
+
+last_hex_digit:
+	.res 1
+
+.code
+; read hex digit, returns digit in A and last_hex_digit
+; returns $81 for return, $80 for backspace
+read_hex_digit:
+.scope
+	jsr GETIN_CHECKED
+	beq read_hex_digit
+	cmp #$30 ; '0'
+	bmi control
+	cmp #$3a ; ':'
+	bpl :+
+	sta last_hex_digit
+	sec
+	sbc #$30
+	rts
+:	cmp #$41	; 'A'
+	bmi read_hex_digit
+	cmp #$47	; 'G'
+	bpl read_hex_digit
+	sta last_hex_digit
+	sec
+	sbc #$37
+	rts
+control:
+	cmp #$0d
+	bne :+
+	lda #$81
+	rts
+:	cmp #$14
+	bne read_hex_digit
+	lda #$80
+	rts
+.endscope
+
+backspace_with_cursor:
+	lda #$14 ; backspace
+	jsr BSOUT
+	lda #$14 ; backspace
+	jsr BSOUT
+	lda #CHAR_CURSOR ; '_'
+	jmp BSOUT
+
+bsout_with_cursor:
+	pha
+	lda #$14
+	jsr BSOUT
+	pla
+	jsr BSOUT
+	lda #CHAR_CURSOR
+	jmp BSOUT
+
+.bss
+
+filename_length:
+	.res 1
+
+.code
+; filename is returned at filename, length at filename_length
+; cursor must be at correct position
+read_filename:
+.scope
+	jsr GETIN_CHECKED
+	cmp #$0d	; 13 .
+	beq return
+	cmp #$14	; 20 .
+	beq backspace
+	cmp #$20	; 32
+	bmi read_filename
+	cmp #$60	; 96 `
+	bpl read_filename
+	inc filename_length
+	ldx filename_length
+	cpx #$11	; 17 .
+	bne character
+	dec filename_length
+	bne read_filename
+character:
+	; TODO: use bsout_with_cursor
+	pha
+	lda #$14	; 20 .
+	jsr BSOUT
+	pla
+	jsr BSOUT
+	lda #CHAR_CURSOR
+	jsr BSOUT
+	jmp read_filename
+backspace:
+	dec filename_length
+	ldx filename_length
+	cpx #$ff	; 255 .
+	bne character
+	inc filename_length
+	beq read_filename
+return:
+	ldx filename_length
+	beq end
+convert_to_petscii:
+	lda screen_filename,x
+	cmp #$20	; 32
+	bpl :+
+	clc
+	adc #$40	; 64 @
+:	sta filename,x
+	dex
+	bpl convert_to_petscii
+end:
+	lda #$14	; 20 .
+	jmp BSOUT
+.endscope
+
+load_music:
+	lda #0
+	jsr SETMSG
+    ldx #<filename
+    ldy #>filename
+    lda filename_length
+    jsr SETNAM
+    lda #$01
+    ldx LAST_DEVICE
+    bne :+
+    ldx #$08
+:   ldy #$03
+    jsr SETLFS
+    lda #0
+	jmp LOAD
+
+.bss
+
+filename:
+	.res 17
+
+.bss
+; TODO: move to bss and into read_hex_byte scope
+hex_byte:
+	.res 1
+
+.code
+read_hex_byte:
+.scope
+	lda #CHAR_CURSOR
+	jsr BSOUT
+read_first_digit:
+	jsr read_hex_digit
+	bmi read_first_digit
+	asl
+	asl
+	asl
+	asl
+	sta hex_byte
+	lda last_hex_digit
+	jsr bsout_with_cursor
+read_second_digit:
+	jsr read_hex_digit
+	bmi :+
+	ora hex_byte
+	sta hex_byte
+	lda last_hex_digit
+	jsr bsout_with_cursor
+	jmp read_return
+:	cmp #$81
+	beq read_second_digit
+	jsr backspace_with_cursor
+	jmp read_first_digit
+read_return:
+	jsr read_hex_digit
+	bpl read_return
+	cmp #$81	; 129 .
+	beq end
+	jsr backspace_with_cursor
+	lda #$f0	; 240 .
+	and hex_byte
+	sta hex_byte
+	jmp read_second_digit
+end:
+	lda #$14	; 20 .
+	jsr BSOUT
+	lda hex_byte
+	rts
+.endscope
+
+
+.bss
+
+; TOOD: move to bss and into scope of read_hex_word
+hex_word:
+	.res 2
+
+.code
+
+; reads hex word, returns in x/y
+read_hex_word:
+.scope
+	lda #CHAR_CURSOR
+	jsr BSOUT
+read_first_digit:
+	jsr read_hex_digit
+	bmi read_first_digit
+	asl
+	asl
+	asl
+	asl
+	sta hex_word
+	lda last_hex_digit
+	jsr bsout_with_cursor
+read_second_digit:
+	jsr read_hex_digit
+	bmi :+
+	ora hex_word
+	sta hex_word
+	lda last_hex_digit
+	jsr bsout_with_cursor
+	jmp read_third_digit
+:	cmp #$81
+	beq read_second_digit
+	jsr backspace_with_cursor
+	jmp read_first_digit
+read_third_digit:
+	jsr read_hex_digit
+	bmi :+
+	asl
+	asl
+	asl
+	asl
+	sta hex_word + 1
+	lda last_hex_digit
+	jsr bsout_with_cursor
+	jmp read_fourth_digit
+:	cmp #$81
+	beq read_third_digit
+	jsr backspace_with_cursor
+	lda #$f0
+	and hex_word
+	sta hex_word
+	jmp read_second_digit
+read_fourth_digit:
+	jsr read_hex_digit
+	bmi :+
+	ora hex_word + 1
+	sta hex_word + 1
+	lda last_hex_digit
+	jsr bsout_with_cursor
+	jmp read_return
+:	cmp #$81
+	beq read_fourth_digit
+	jsr backspace_with_cursor
+	jmp read_third_digit
+read_return:
+	jsr read_hex_digit
+	bpl read_return
+	cmp #$81
+	beq end
+	jsr backspace_with_cursor
+	lda #$f0
+	and hex_word + 1
+	sta hex_word + 1
+	jmp read_fourth_digit
+end:
+	lda #$14	; 20 .
+	jsr BSOUT
+	ldx hex_word
+	ldy hex_word + 1
+	rts
+.endscope
+
+
+.bss
+
+; TODO: move to bss, into scope of read_one_or_two
+one_or_two:
+	.res 1
+
+.code
+
+read_one_or_two:
+.scope
+	lda #CHAR_CURSOR
+	jsr BSOUT
+read_digit:
+	jsr GETIN_CHECKED
+	cmp #$31 ; '1'
+	beq :+
+	cmp #$32 ; '2'
+	bne read_digit
+:	pha
+	sec
+	sbc #$31	; 49 1
+	sta one_or_two
+	pla
+	jsr bsout_with_cursor
+read_return:
+	jsr GETIN_CHECKED
+	cmp #$0d
+	beq end
+	cmp #$14
+	bne read_return
+	jsr backspace_with_cursor
+	jmp read_digit
+end:
+	lda #$14
+	jsr BSOUT
+	lda one_or_two
+	rts
+.endscope
 
 L35e0:
 	ldx #COLOR_BLACK
 	stx VIC_BORDERCOLOR
 	stx VIC_BG_COLOR0
-	ldx #$1f
+	ldx #<((screen / $40) | (charset / $400))
 	stx VIC_VIDEO_ADR
 	jmp setup_playing_screen
 
-	; padding, remove
-	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
-	.byte $00, $00, $00, $00, $00, $00          	; "......"
+
+.bss
 
 maximum_raster_time:
-	.byte $00
+	.res 1
 current_raster_time:
-	.byte $00
+	.res 1
+
+.code
 
 irq_main:
 	inc VIC_BORDERCOLOR
@@ -832,7 +824,7 @@ play_music:
 	sty screen_rastertime_maximum + 1
 	ldx #$00
 load_monitor_page:
-	lda monitor_page,x
+	lda $ff00,x
 	sta screen_monitor_page,x
 	dex
 	bne load_monitor_page
@@ -906,38 +898,12 @@ inc_end:
 	stx load_running_index + 1
 	jmp bottom_irq
 
-	; padding, remove
-	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
-	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
-	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
-	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
-	.byte $00, $00, $00                         	; "..."
 
 D36fe:	.byte $b9                                   	; "."
 D36ff:	.byte $00                                   	; "."
 
-; garbage, remove
-L3700:	lda VIC_HLINE
-	sta $36ff
-	inc VIC_BORDERCOLOR
-	lda #$35	; 53 5
-	sta $01
-	jsr $ffff
-	lda VIC_HLINE
-	sec
-	sbc $36ff
-	cmp $36fe
-	bmi :+
-	sta $36fe
-:	jsr format_hex
-	stx $0538
-	sty $0539
-	jmp $37f0
-
-	; padding, remove
-	.byte $00, $00, $00, $00, $00               	; "....."
-
-init_positions:	ldx #$00	; 0 .
+init_positions:
+	ldx #$00	; 0 .
 	stx maximum_raster_time
 	stx load_running_index + 1
 	ldx #$00	; 0 .
@@ -976,10 +942,6 @@ init_positions:	ldx #$00	; 0 .
 	bpl :-
 	rts
 
-	; padding, remove
-	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
-	.byte $00, $00                              	; ".."
-
 ; converts A to two hex digits returned in x/y
 format_hex:
 .scope
@@ -1013,10 +975,6 @@ end_low:
 	rts
 .endscope
 
-	; padding, remove
-	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
-	.byte $00, $00, $00, $00, $00               	; "....."
-
 bottom_irq:
 	ldx #$c1	; 193 .
 :	cpx VIC_HLINE
@@ -1029,21 +987,13 @@ bottom_irq:
 	ldx #$ff
 :	cpx VIC_HLINE
 	bne :-
-	ldx #$1f
+	ldx #<((screen / $40) | (charset / $400))
 	stx VIC_VIDEO_ADR
 	ldx #$37
 	stx $01
 	ldx #$01
 	stx VIC_IRR
 	jmp ENDIRQ
-
-	;padding, remove
-	.byte $00, $00, $00, $00, $00, $00, $00
-
-.segment "FIXED"
-
-charset:
-	.incbin "charset.bin"
 
 start_screen:
 	scrcode "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
@@ -1095,12 +1045,3 @@ playing_screen:
 	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
 	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
 	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
-
-monitor_page = $9200
-D9210 = $9210
-
-
-GETIN_CHECKED = $e124
-Se544 = $e544
-ENDIRQ = $ea31
-RESET = $fce2
