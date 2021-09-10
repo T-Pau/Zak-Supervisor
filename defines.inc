@@ -59,3 +59,9 @@ LAST_DEVICE = $ba
 ENDIRQ = $ea31
 RESET = $fce2
 
+tmp1 = $02
+ptr1 = $fb
+ptr2 = $fd
+ptr3 = $55
+ptr4 = $71
+

@@ -1,0 +1,25 @@
+````````````````````````````````````````
+         zak - supervisor  v1.0
+               in 1990 by
+              dillo /t'pau
+````````````````````````````````````````
+  zak mustn't load to $3000-$3fff !!!!
+    (proggie would crash otherwise.)
+````````````````````````````````````````
+
+ filename:
+
+ init    : a: $
+           x: $
+           y: $
+           1: jsr / 2: sta  (1/2)?
+           at : $
+
+ play    : jsr: $
+           interrupts per frame:
+
+
+
+
+
+

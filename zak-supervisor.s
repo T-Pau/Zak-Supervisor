@@ -1,5 +1,7 @@
 .export start
 
+.autoimport +
+
 .include "c64.inc"
 .include "cbm_kernal.inc"
 .include "defines.inc"
@@ -38,17 +40,24 @@ color_monitor_running = COLOR_RAM + 11 * 40
 screen_position_running = screen + 17 * 40 + 17
 screen_monitor_page = screen + 1000 - 256
 color_monitor_page = COLOR_RAM + 1000 - 256
-screen_rastertime_current = screen + 8 * 40 + 34
-screen_rastertime_maximum = screen + 9 * 40 + 34
+screen_rastertime_current = screen + 8 * 40 + 19
+screen_rastertime_maximum = screen + 9 * 40 + 19
 
 screen_filename = screen + 9 * 40 + 11
 
 CHAR_CURSOR = $5f ; _
 
-.segment "CHARSET"
-
-charset:
-	.incbin "charset.bin"
+.macro copy_screen source
+	lda #<source
+	sta ptr1
+	lda #>source
+	sta ptr1 + 1
+	lda #<screen
+	sta ptr2
+	lda #>screen
+	sta ptr2 + 1
+	jsr expand
+.endmacro
 
 .code
 
@@ -63,19 +72,10 @@ start:
 	ldx #COLOR_BLACK
 	stx VIC_BORDERCOLOR
 	stx VIC_BG_COLOR0
-:	lda start_screen,x
-	sta screen,x
-	lda start_screen + $100,x
-	sta screen + $100,x
-	lda start_screen + $200,x
-	sta screen + $200,x
-	dex
-	bne :-
-	ldx #39
-	lda #COLOR_MID_GRAY
-:	sta COLOR_RAM + 9 * 40,x
-	dex
-	bpl :-
+	copy_screen start_screen
+	lda #9
+	ldx #COLOR_MID_GRAY
+	jsr color_line
 	ldx #$09
 	ldy #$0b
 	clc
@@ -85,71 +85,53 @@ start:
 	ldx #$00
 	stx filename_length
 	jsr read_filename
-	ldx #39
-	lda #COLOR_DARK_GRAY
-:	sta COLOR_RAM + 9 * 40,x
-	dex
-	bpl :-
-	ldx filename_length
-	beq :+
+	lda #9
+	ldx #COLOR_DARK_GRAY
+	jsr color_line
 	jsr load_music
 	ldx ST
 	cpx #$40
 	beq :+
 	jmp start
-:	ldx #39
-	lda #COLOR_MID_GRAY
-:	sta COLOR_RAM + 11 * 40,x
-	dex
-	bpl :-
+:	lda #11
+	ldx #COLOR_MID_GRAY
+	jsr color_line
 	ldx #$0b
 	ldy #$0f
 	clc
 	jsr PLOT
 	jsr read_hex_byte
 	sta init_music_a + 1
-	ldx #$10
-	lda #COLOR_DARK_GRAY
-:	sta COLOR_RAM + 11 * 40 + 10,x
-	dex
-	bpl :-
-	ldx #39
-	lda #COLOR_MID_GRAY
-:	sta COLOR_RAM + 12 * 40,x
-	dex
-	bpl :-
+	lda #11
+	ldx #COLOR_DARK_GRAY
+	jsr color_line
+	lda #12
+	ldx #COLOR_MID_GRAY
+	jsr color_line
 	ldx #$0c
 	ldy #$0f
 	clc
 	jsr PLOT
 	jsr read_hex_byte
 	sta init_music_x + 1
-	ldx #39
-	lda #COLOR_DARK_GRAY
-:	sta COLOR_RAM + 12 * 40,x
-	dex
-	bpl :-
-	ldx #39
-	lda #COLOR_MID_GRAY
-:	sta COLOR_RAM + 13 * 40,x
-	dex
-	bpl :-
+	lda #12
+	ldx #COLOR_DARK_GRAY
+	jsr color_line
+	lda #13
+	ldx #COLOR_MID_GRAY
+	jsr color_line
 	ldx #$0d
 	ldy #$0f
 	clc
 	jsr PLOT
 	jsr read_hex_byte
 	sta init_music_y + 1
-	ldx #39
-	lda #COLOR_DARK_GRAY
-:	sta COLOR_RAM + 13 * 40,x
-	dex
-	bpl :-
-	ldx #39
-	lda #COLOR_MID_GRAY
-:	sta COLOR_RAM + 14 * 40,x
-	dex
-	bpl :-
+	lda #13
+	ldx #COLOR_DARK_GRAY
+	jsr color_line
+	lda #14
+	ldx #COLOR_MID_GRAY
+	jsr color_line
 	ldx #$0e
 	ldy #$23
 	clc
@@ -160,16 +142,12 @@ start:
 	bne L30ec
 L30ea:	lda #$8d
 L30ec:	sta init_music
-	ldx #$27
-	lda #COLOR_DARK_GRAY
-:	sta COLOR_RAM + 14 * 40,x
-	dex
-	bpl :-
-	ldx #$27
-	lda #COLOR_MID_GRAY
-:	sta COLOR_RAM + 15 * 40,x
-	dex
-	bpl :-
+	lda #14
+	ldx #COLOR_DARK_GRAY
+	jsr color_line
+	lda #15
+	ldx #COLOR_MID_GRAY
+	jsr color_line
 	ldx #$0f
 	ldy #$11
 	clc
@@ -177,14 +155,12 @@ L30ec:	sta init_music
 	jsr read_hex_word
 	stx init_music + 2
 	sty init_music + 1
-	ldx #39
-:	lda #COLOR_DARK_GRAY
-	sta COLOR_RAM + 15 * 40,x
-	sta COLOR_RAM + 11 * 40,x
-	lda #COLOR_MID_GRAY
-	sta COLOR_RAM + 17 * 40,x
-	dex
-	bpl :-
+	lda #15
+	ldx #COLOR_DARK_GRAY
+	jsr color_line
+	lda #17
+	ldx #COLOR_MID_GRAY
+	jsr color_line
 	ldx #$11
 	ldy #$11
 	clc
@@ -192,19 +168,16 @@ L30ec:	sta init_music
 	jsr read_hex_word
 	stx play_music + 2
 	sty play_music + 1
+	lda #17
+	ldx #COLOR_DARK_GRAY
+	jsr color_line
+	; TODO: read number of interrupts
 
-setup_playing_screen:	lda #$97
+setup_playing_screen:
+	lda #$97
 	jsr BSOUT
 	jsr Se544 ; TODO: symbolize
-	ldx #0
-:	lda playing_screen,x
-	sta screen,x
-	lda playing_screen + $100,x
-	sta screen + $100,x
-	lda playing_screen + $200,x
-	sta screen + $200,x
-	dex
-	bne :-
+	copy_screen playing_screen
 	jsr init_positions
 	sei
 	ldx #$01	; 1 .
@@ -770,14 +743,14 @@ end:
 	rts
 .endscope
 
-L35e0:
-	ldx #COLOR_BLACK
-	stx VIC_BORDERCOLOR
-	stx VIC_BG_COLOR0
-	ldx #<((screen / $40) | (charset / $400))
-	stx VIC_VIDEO_ADR
-	jmp setup_playing_screen
-
+; restart without init, not currently supported
+;start_without_init:
+;	ldx #COLOR_BLACK
+;	stx VIC_BORDERCOLOR
+;	stx VIC_BG_COLOR0
+;	ldx #<((screen / $40) | (charset / $400))
+;	stx VIC_VIDEO_ADR
+;	jmp setup_playing_screen
 
 .bss
 
@@ -983,53 +956,47 @@ bottom_irq:
 	stx VIC_IRR
 	jmp ENDIRQ
 
+; line number in A, color in X
+; uses tmp1, pt1, A, X, Y
+color_line:
+.scope
+	; 40 is %101000
+	sta tmp1
+	ldy #0
+	sty ptr1 + 1
+	asl
+	rol ptr1 + 1
+	asl
+	rol ptr1 + 1
+	adc tmp1
+	asl
+	rol ptr1 + 1
+	asl
+	rol ptr1 + 1
+	asl
+	rol ptr1 + 1
+	sta ptr1
+	lda #>COLOR_RAM
+	clc
+	adc ptr1 + 1
+	sta ptr1 + 1
+	txa
+	ldy #39
+:	sta (ptr1),y
+	dey
+	bpl :-
+	rts
+.endscope
+
+.rodata
+
 start_screen:
-	scrcode "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-	scrcode "         zak - supervisor  v1.0         "
-	scrcode "               in 1990 by               "
-	scrcode "              dillo /t'pau              "
-	scrcode "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-	scrcode "  zak mustn't load to $3000-$3fff !!!!  "
-	scrcode "    (proggie would crash otherwise.)    "
-	scrcode "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-	scrcode "                                        "
-	scrcode " filename:                              "
-	scrcode "                                        "
-	scrcode " init    : a: $                         "
-	scrcode "           x: $                         "
-	scrcode "           y: $                         "
-	scrcode "           1: jsr / 2: sta  (1/2)?      "
-	scrcode "           at : $                       "
-	scrcode "                                        "
-	scrcode " play    : jsr: $                       "
-	scrcode "                                        "
-	scrcode "        "
+	.incbin "init.bin"
 
 playing_screen:
-	scrcode "^0   current position  ($1000): $..   0^"
-	scrcode "^1                                    1^"
-	scrcode "^2  #1 ($1000): $..  #5 ($1000): $..  2^"
-	scrcode "^3  #2 ($1000): $..  #6 ($1000): $..  3^"
-	scrcode "^4  #3 ($1000): $..  #7 ($1000): $..  4^"
-	scrcode "^5  #4 ($1000): $..  #8 ($1000): $..  5^"
-	scrcode "^6                                    6^"
-	scrcode "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-	scrcode "    current rastertime         : $..    "
-	scrcode "    maximum rastertime (so far): $..    "
-	scrcode "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-	scrcode "0000000000000000000000000               "
-	scrcode "0000000000000000000000000               "
-	scrcode "0000000000000000000000000               "
-	scrcode "0000000000000000000000000               "
-	scrcode "0000000000000000000000000               "
-	scrcode "0000000000000000000000000               "
-	scrcode "position above: $1000  "
-	.byte $1c ; £
-	scrcode "@@@@@@@@@@@@@@@@"
+	.incbin "monitor.bin"
 
-	.byte $40, $40, $40, $40, $40, $40, $40, $40	; "@@@@@@@@"
-	.byte $40, $40, $40, $40, $40, $40, $40, $40	; "@@@@@@@@"
-	.byte $40, $40, $40, $40, $40, $40, $40, $7d	; "@@@@@@@}"
-	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
-	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
-	.byte $00, $00, $00, $00, $00, $00, $00, $00	; "........"
+.segment "CHARSET"
+
+charset:
+	.incbin "charset.bin"

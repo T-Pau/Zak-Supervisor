@@ -1,2 +1,5 @@
 /.DS_Store
 /zak-supervisor.prg
+*.o
+/init.bin
+/monitor.bin
