@@ -8,6 +8,8 @@
 
 .macpack cbm
 
+; DEBUG_DISPLAY = 1
+
 GETIN_CHECKED = $e124
 Se544 = $e544
 
@@ -37,15 +39,16 @@ screen_monitor_7 = screen + 4 * 40 + 34
 screen_monitor_8 = screen + 5 * 40 + 34
 screen_monitor_running = screen + 11 * 40
 color_monitor_running = COLOR_RAM + 11 * 40
-screen_position_running = screen + 17 * 40 + 17
+screen_position_running = screen + 17 * 40 + 18
 screen_monitor_page = screen + 1000 - 256
 color_monitor_page = COLOR_RAM + 1000 - 256
-screen_rastertime_current = screen + 8 * 40 + 19
-screen_rastertime_maximum = screen + 9 * 40 + 19
+screen_rastertime_current = screen + 8 * 40 + 18
+screen_rastertime_maximum = screen + 9 * 40 + 18
 
 screen_filename = screen + 9 * 40 + 11
 
 CHAR_CURSOR = $5f ; _
+
 
 .macro copy_screen source
 	lda #<source
@@ -136,12 +139,13 @@ start:
 	ldy #$23
 	clc
 	jsr PLOT
-	jsr read_one_or_two
-	bne L30ea
+	lda #2
+	jsr read_digit
 	lda #$20
-	bne L30ec
-L30ea:	lda #$8d
-L30ec:	sta init_music
+	dex
+	beq :+
+	lda #$8d
+:	sta init_music
 	lda #14
 	ldx #COLOR_DARK_GRAY
 	jsr color_line
@@ -171,14 +175,40 @@ L30ec:	sta init_music
 	lda #17
 	ldx #COLOR_DARK_GRAY
 	jsr color_line
-	; TODO: read number of interrupts
+	lda #18
+	ldx #COLOR_MID_GRAY
+	jsr color_line
+	ldx #18
+	ldy #33
+	clc
+	jsr PLOT
+	lda #4
+	jsr read_digit
+	stx number_of_interrupts
 
 setup_playing_screen:
 	lda #$97
 	jsr BSOUT
 	jsr Se544 ; TODO: symbolize
 	copy_screen playing_screen
+	ldx #0
+	ldy #0
+	lda #$24 ; '$'
+:	sta screen_rastertime_current - 1,y
+	sta screen_rastertime_maximum - 1,y
+	iny
+	iny
+	iny
+	iny
+	iny
+	inx
+	cpx number_of_interrupts
+	bne :-
+
 	jsr init_positions
+	ldx #0
+	stx current_interrupt
+	; TODO: add $ for raster time of interrupts 2..
 	sei
 	ldx #$01	; 1 .
 	stx VIC_IMR
@@ -188,9 +218,11 @@ setup_playing_screen:
 	sta VIC_CTRL1
 	lda #$33	; 51 3
 	sta VIC_HLINE
-	lda #<irq_main
+	ldx number_of_interrupts
+	dex
+	lda irq_low,x
 	sta IRQVec
-	lda #>irq_main
+	lda irq_high,x
 	sta IRQVec + 1
 	nop
 	lda #$35	; 53 5
@@ -435,6 +467,11 @@ not_return:
 .endscope
 
 .bss
+
+number_of_interrupts:
+	.res 1
+current_interrupt:
+	.res 1
 
 last_hex_digit:
 	.res 1
@@ -707,26 +744,33 @@ end:
 .bss
 
 ; TODO: move to bss, into scope of read_one_or_two
-one_or_two:
+digit:
+	.res 1
+max_digit:
 	.res 1
 
 .code
 
-read_one_or_two:
+; maximum allowed digit in A
+; returns digit read in X
+read_digit:
 .scope
+	clc
+	adc #$31
+	sta max_digit
 	lda #CHAR_CURSOR
 	jsr BSOUT
 read_digit:
 	jsr GETIN_CHECKED
 	cmp #$31 ; '1'
-	beq :+
-	cmp #$32 ; '2'
-	bne read_digit
-:	pha
+	bmi read_digit
+	cmp max_digit
+	bpl read_digit
+	sta tmp1
 	sec
-	sbc #$31	; 49 1
-	sta one_or_two
-	pla
+	sbc #$30 ; '0'
+	sta digit
+	lda tmp1
 	jsr bsout_with_cursor
 read_return:
 	jsr GETIN_CHECKED
@@ -739,7 +783,7 @@ read_return:
 end:
 	lda #$14
 	jsr BSOUT
-	lda one_or_two
+	ldx digit
 	rts
 .endscope
 
@@ -755,40 +799,221 @@ end:
 .bss
 
 maximum_raster_time:
-	.res 1
+	.res 4
 current_raster_time:
-	.res 1
+	.res 4
 
 .code
 
-irq_main:
+; low byte of rasterline to start at in A
+play:
+:	cmp VIC_HLINE
+	bcs :-
 	inc VIC_BORDERCOLOR
-	lda VIC_HLINE
-	sta current_raster_time
 	lda #$35
 	sta $01
+	lda VIC_HLINE
+	ldx current_interrupt
+	sta current_raster_time,x
 play_music:
 	jsr $0000
 	lda VIC_HLINE
 	dec VIC_BORDERCOLOR
+	ldx current_interrupt
 	sec
-	sbc current_raster_time
-	cmp maximum_raster_time
+	sbc current_raster_time,x
+	sta current_raster_time,x
+	cmp maximum_raster_time,x
 	bmi :+
-	sta maximum_raster_time
-:	jsr format_hex
-	stx screen_rastertime_current
-	sty screen_rastertime_current + 1
-	lda maximum_raster_time
+	sta maximum_raster_time,x
+:	inx
+	stx current_interrupt
+load_monitor_running:
+	lda $ffff
 	jsr format_hex
-	stx screen_rastertime_maximum
-	sty screen_rastertime_maximum + 1
+	txa
+load_running_index:
 	ldx #$00
+	sta screen_monitor_running,x
+	tya
+	sta screen_monitor_running + 40,x
+	inx
+	cpx #40
+	bne :+
+	ldx #80
+	bne inc_end
+:	cpx #120
+	bne :+
+	ldx #160
+	bne inc_end
+:	cpx #200
+	bne inc_end
+	ldx #$00	; 0 .
+inc_end:
+	stx load_running_index + 1
+	rts
+
+
+; raster lines:
+;   1: 51
+;   2: 51, 207
+;   3: 51, 150 (155), 259
+;   4: 51, 129, 207, 285
+;
+;   charset switch: 194
+;   charset switch back: > 250
+
+.rodata
+
+irq_low:
+	.byte <irq_single, <irq_double, <irq_tripple, <irq_quadruple
+irq_high:
+	.byte >irq_single, >irq_double, >irq_tripple, >irq_quadruple
+
+.code
+
+irq_single:
+	lda #0
+	jsr play
+	lda #0
+	jsr update_monitor_page
+	lda #$80
+	jsr update_monitor_page
+	jsr switch_for_page
+	jsr wait_for_high_set
+	jmp update_display
+
+irq_double:
+	lda #0
+	jsr play
+	lda #0
+	jsr update_monitor_page
+	lda #$80
+	jsr update_monitor_page
+	jsr switch_for_page
+	lda #207
+	jsr play
+	jsr wait_for_high_set
+	jmp update_display
+
+;   3: 51, 150 (155), 259
+irq_tripple:
+	lda #0
+	jsr play
+	lda #0
+	jsr update_monitor_page
+	lda #150
+	jsr play
+	jsr switch_for_page
+	jsr wait_for_high_set
+	lda #<259
+	jsr play
+	lda #$80
+	jsr update_monitor_page
+	jmp update_display
+
+;   4: 51, 129, 207, 285
+irq_quadruple:
+	lda #0
+	jsr play
+	lda #0
+	ldx #$80
+	jsr update_monitor_page
+	lda #129
+	jsr play
+	jsr switch_for_page
+	lda #207
+	jsr play
+	lda #$80
+	tax
+	jsr update_monitor_page
+	jsr wait_for_high_set
+	lda #<285
+	jsr play
+	jmp update_display
+
+
+; offset in A, number of bytes in X
+update_monitor_page:
+.ifdef DEBUG_DISPLAY
+	dec VIC_BORDERCOLOR
+.endif
+	sta load_monitor_page + 1
+	clc
+	adc #<screen_monitor_page
+	sta load_monitor_page + 4
+	lda #0
+	adc #>screen_monitor_page
+	sta load_monitor_page + 5
+	ldx #$80
 load_monitor_page:
 	lda $ff00,x
 	sta screen_monitor_page,x
 	dex
-	bne load_monitor_page
+	bpl load_monitor_page
+.ifdef DEBUG_DISPLAY
+	inc VIC_BORDERCOLOR
+.endif
+	rts
+
+update_display:
+	; switch back to our charset
+	ldx #<((screen / $40) | (charset / $400))
+	stx VIC_VIDEO_ADR
+
+.ifdef DEBUG_DISPLAY
+	dec VIC_BORDERCOLOR
+.endif
+
+	; update raster times
+.scope
+	ldx #<screen_rastertime_current
+	stx ptr1
+	ldx #>screen_rastertime_current
+	stx ptr1 + 1
+	ldx #<screen_rastertime_maximum
+	stx ptr2
+	ldx #>screen_rastertime_maximum
+	stx ptr2 + 1
+	ldy #0
+loop:
+	sty current_interrupt
+	lda current_raster_time,y
+	jsr format_hex
+	tya
+	ldy #1
+	sta (ptr1),y
+	txa
+	dey
+	sta (ptr1),y
+	ldy current_interrupt
+	lda maximum_raster_time,y
+	jsr format_hex
+	tya
+	ldy #1
+	sta (ptr2),y
+	txa
+	dey
+	sta (ptr2),y
+	clc
+	lda #5
+	adc ptr1
+	sta ptr1
+	bcc :+
+	inc ptr1 + 1
+	clc
+:	lda #5
+	adc ptr2
+	sta ptr2
+	bcc :+
+	inc ptr2 + 1
+:	ldy current_interrupt
+	iny
+	cpy number_of_interrupts
+	bne loop
+.endscope
+
+	; update current and 1-8
 load_monitor_current:
 	lda $ffff
 	jsr format_hex
@@ -834,34 +1059,22 @@ load_monitor_8:
 	jsr format_hex
 	stx screen_monitor_8
 	sty screen_monitor_8 + 1
-load_monitor_running:
-	lda $ffff
-	jsr format_hex
-	txa
-load_running_index:
+
+	; reset current interrupt
 	ldx #$00
-	sta screen_monitor_running,x
-	tya
-	sta screen_monitor_running + 40,x
-	inx
-	cpx #40
-	bne :+
-	ldx #80
-	bne inc_end
-:	cpx #120
-	bne :+
-	ldx #160
-	bne inc_end
-:	cpx #200
-	bne inc_end
-	ldx #$00	; 0 .
-inc_end:
-	stx load_running_index + 1
-	jmp bottom_irq
+	stx current_interrupt
 
+.ifdef DEBUG_DISPLAY
+	inc VIC_BORDERCOLOR
+.endif
 
-D36fe:	.byte $b9                                   	; "."
-D36ff:	.byte $00                                   	; "."
+	; bank in kernal and end interrupt
+	ldx #$37
+	stx $01
+	ldx #$01
+	stx VIC_IRR
+	jmp ENDIRQ
+
 
 init_positions:
 	ldx #$00	; 0 .
@@ -936,25 +1149,16 @@ end_low:
 	rts
 .endscope
 
-bottom_irq:
-	ldx #$c1	; 193 .
+switch_for_page:
+	ldx #192
 :	cpx VIC_HLINE
-	bne :-
-	ldx #$14	; 20 .
+	bcs :-
+	ldx #$14
 :	dex
 	bne :-
 	ldx #$17
 	stx VIC_VIDEO_ADR
-	ldx #$ff
-:	cpx VIC_HLINE
-	bne :-
-	ldx #<((screen / $40) | (charset / $400))
-	stx VIC_VIDEO_ADR
-	ldx #$37
-	stx $01
-	ldx #$01
-	stx VIC_IRR
-	jmp ENDIRQ
+	rts
 
 ; line number in A, color in X
 ; uses tmp1, pt1, A, X, Y
@@ -987,6 +1191,11 @@ color_line:
 	bpl :-
 	rts
 .endscope
+
+wait_for_high_set:
+:	lda VIC_CTRL1
+	bpl :-
+	rts
 
 .rodata
 

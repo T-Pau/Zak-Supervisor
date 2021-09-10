@@ -1,10 +1,10 @@
 ````````````````````````````````````````
-         zak - supervisor  v1.0
-               in 1990 by
+         zak - supervisor  v2.0
+               in 2021 by
               dillo /t'pau
 ````````````````````````````````````````
-  zak mustn't load to $3000-$3fff !!!!
-    (proggie would crash otherwise.)
+   music mustn't load to $3000-$3fff,
+    otherwise the program wil crash.
 ````````````````````````````````````````
 
  filename:
