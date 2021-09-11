@@ -91,12 +91,15 @@ start:
 	lda #9
 	ldx #COLOR_DARK_GRAY
 	jsr color_line
+	lda filename_length
+	beq load_ok
 	jsr load_music
 	ldx ST
 	cpx #$40
-	beq :+
+	beq load_ok
 	jmp start
-:	lda #11
+load_ok:
+	lda #11
 	ldx #COLOR_MID_GRAY
 	jsr color_line
 	ldx #$0b
