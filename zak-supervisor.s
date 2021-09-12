@@ -311,16 +311,14 @@ not_left:
 	sta color_monitor_page,x
 	txa
 	clc
-	adc #$10
-update_page_low_high_nibble:
-	tax
-	lda #COLOR_LIGHT_GRAY
-	sta color_monitor_page,x
-	txa
-	sta load_monitor_current + 1
-	jsr format_hex
-	stx screen_monitor_current - 6
-	jmp main_loop
+	adc #40
+	bcc :+
+	adc #15
+	cmp #40
+	bcc :+
+	sbc #40
+:	tax
+	jmp update_page_low
 not_down:
 	cmp #$91 ; up
 	bne not_up
@@ -329,8 +327,14 @@ not_down:
 	sta color_monitor_page,x
 	txa
 	sec
-	sbc #$10
-	jmp update_page_low_high_nibble
+	sbc #40
+	bcs :+
+	sbc #15
+	cmp #255-39
+	bcs :+
+	adc #40
+:	tax
+	jmp update_page_low
 not_up:	cmp #$03 ; run/stop
 	bne not_runstop
 	ldx #$00	; 0 .
