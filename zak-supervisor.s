@@ -8,6 +8,19 @@
 
 .macpack cbm
 
+COLOR_BACKGROUND = COLOR_BLACK
+
+COLOR_FOCUS = COLOR_LIGHT_GRAY
+CTRL_COLOR_FOCUS = CTRL_COLOR_LIGHT_GRAY
+
+COLOR_NORMAL = COLOR_MID_GRAY
+CTRL_COLOR_NORMAL = CTRL_COLOR_MID_GRAY
+
+COLOR_DISABLED = COLOR_DARK_GRAY
+
+COLOR_LINE1 = COLOR_RED
+COLOR_LINE2 = COLOR_WHITE
+
 ; DEBUG_DISPLAY = 1
 
 GETIN_CHECKED = $e124
@@ -65,19 +78,19 @@ CHAR_CURSOR = $5f ; _
 .code
 
 start:
-	lda #CTRL_COLOR_DARK_GRAY
+	lda #CTRL_COLOR_NORMAL
 	jsr BSOUT
 	jsr CLRSCR
-	lda #CTRL_COLOR_MEDIUM_GRAY
+	lda #CTRL_COLOR_FOCUS
 	jsr BSOUT
 	ldx #<((screen / $40) | (charset / $400))
 	stx VIC_VIDEO_ADR
-	ldx #COLOR_BLACK
+	ldx #COLOR_BACKGROUND
 	stx VIC_BORDERCOLOR
 	stx VIC_BG_COLOR0
 	copy_screen start_screen
 	lda #9
-	ldx #COLOR_MID_GRAY
+	ldx #COLOR_FOCUS
 	jsr color_line
 	ldx #9
 	ldy #11
@@ -89,7 +102,7 @@ start:
 	stx filename_length
 	jsr read_filename
 	lda #9
-	ldx #COLOR_DARK_GRAY
+	ldx #COLOR_NORMAL
 	jsr color_line
 	lda filename_length
 	beq load_ok
@@ -101,7 +114,7 @@ start:
 load_ok:
 	; init: sta or jsr
 	lda #11
-	ldx #COLOR_MID_GRAY
+	ldx #COLOR_FOCUS
 	jsr color_line
 	ldx #11
 	ldy #35
@@ -112,15 +125,20 @@ load_ok:
 	lda #$20
 	dex
 	beq :+
+	ldx #COLOR_DISABLED
+	lda #13
+	jsr color_line
+	lda #14
+	jsr color_line
 	lda #$8d
 :	sta init_music
 	lda #11
-	ldx #COLOR_DARK_GRAY
+	ldx #COLOR_NORMAL
 	jsr color_line
 
 	; init: a
 	lda #12
-	ldx #COLOR_MID_GRAY
+	ldx #COLOR_FOCUS
 	jsr color_line
 	ldx #12
 	ldy #15
@@ -129,14 +147,14 @@ load_ok:
 	jsr read_hex_byte
 	sta init_music_a + 1
 	lda #12
-	ldx #COLOR_DARK_GRAY
+	ldx #COLOR_NORMAL
 	jsr color_line
 	lda init_music
 	bmi read_init_address
 
 	; init: x
 	lda #13
-	ldx #COLOR_MID_GRAY
+	ldx #COLOR_FOCUS
 	jsr color_line
 	ldx #13
 	ldy #15
@@ -145,12 +163,12 @@ load_ok:
 	jsr read_hex_byte
 	sta init_music_x + 1
 	lda #13
-	ldx #COLOR_DARK_GRAY
+	ldx #COLOR_NORMAL
 	jsr color_line
 
 	; init: y
 	lda #14
-	ldx #COLOR_MID_GRAY
+	ldx #COLOR_FOCUS
 	jsr color_line
 	ldx #14
 	ldy #15
@@ -159,13 +177,13 @@ load_ok:
 	jsr read_hex_byte
 	sta init_music_y + 1
 	lda #14
-	ldx #COLOR_DARK_GRAY
+	ldx #COLOR_NORMAL
 	jsr color_line
 
 read_init_address:
 	; init: address
 	lda #15
-	ldx #COLOR_MID_GRAY
+	ldx #COLOR_FOCUS
 	jsr color_line
 	ldx #15
 	ldy #17
@@ -175,12 +193,12 @@ read_init_address:
 	stx init_music + 2
 	sty init_music + 1
 	lda #15
-	ldx #COLOR_DARK_GRAY
+	ldx #COLOR_NORMAL
 	jsr color_line
 
 	; play: address
 	lda #17
-	ldx #COLOR_MID_GRAY
+	ldx #COLOR_FOCUS
 	jsr color_line
 	ldx #17
 	ldy #17
@@ -190,12 +208,12 @@ read_init_address:
 	stx play_music + 2
 	sty play_music + 1
 	lda #17
-	ldx #COLOR_DARK_GRAY
+	ldx #COLOR_NORMAL
 	jsr color_line
 
 	; play: number of interrupts
 	lda #18
-	ldx #COLOR_MID_GRAY
+	ldx #COLOR_FOCUS
 	jsr color_line
 	ldx #18
 	ldy #33
@@ -206,7 +224,7 @@ read_init_address:
 	stx number_of_interrupts
 
 setup_playing_screen:
-	lda #$97
+	lda #CTRL_COLOR_NORMAL
 	jsr BSOUT
 	jsr Se544 ; TODO: symbolize
 	copy_screen playing_screen
@@ -298,12 +316,12 @@ not_shift_puls:
 not_shift_minus:
 	cmp #$1d ; right
 	bne not_right
-	lda #COLOR_DARK_GRAY
+	lda #COLOR_NORMAL
 	ldx load_monitor_current + 1
 	sta color_monitor_page,x
 	inx
 update_page_low:
-	lda #COLOR_LIGHT_GRAY
+	lda #COLOR_FOCUS
 	sta color_monitor_page,x
 	stx load_monitor_current + 1
 	txa
@@ -315,7 +333,7 @@ not_right:
 	cmp #$9d ; left
 	bne not_left
 	ldx load_monitor_current + 1
-	lda #COLOR_DARK_GRAY
+	lda #COLOR_NORMAL
 	sta color_monitor_page,x
 	dex
 	jmp update_page_low
@@ -323,7 +341,7 @@ not_left:
 	cmp #$11 ; down
 	bne not_down
 	ldx load_monitor_current + 1
-	lda #COLOR_DARK_GRAY
+	lda #COLOR_NORMAL
 	sta color_monitor_page,x
 	txa
 	clc
@@ -339,7 +357,7 @@ not_down:
 	cmp #$91 ; up
 	bne not_up
 	ldx load_monitor_current + 1
-	lda #COLOR_DARK_GRAY
+	lda #COLOR_NORMAL
 	sta color_monitor_page,x
 	txa
 	sec
@@ -815,7 +833,7 @@ end:
 
 ; restart without init, not currently supported
 ;start_without_init:
-;	ldx #COLOR_BLACK
+;	ldx #COLOR_BACKGROUND
 ;	stx VIC_BORDERCOLOR
 ;	stx VIC_BG_COLOR0
 ;	ldx #<((screen / $40) | (charset / $400))
@@ -1130,13 +1148,13 @@ init_positions:
 	sty load_monitor_8 + 2
 	stx load_monitor_running + 1
 	sty load_monitor_running + 2
-	ldx #COLOR_LIGHT_GRAY
+	ldx #COLOR_FOCUS
 	stx color_monitor_page
 	ldx #79
 :	lda #COLOR_RED
 	sta color_monitor_running,x
 	sta color_monitor_running + 160,x
-	lda #COLOR_LIGHT_GRAY
+	lda #COLOR_FOCUS
 	sta color_monitor_running + 80,x
 	dex
 	bpl :-
@@ -1187,7 +1205,7 @@ switch_for_page:
 	rts
 
 ; line number in A, color in X
-; uses tmp1, pt1, A, X, Y
+; uses tmp1, pt1, A, Y
 color_line:
 .scope
 	; 40 is %101000
