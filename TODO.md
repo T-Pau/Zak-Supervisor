@@ -1,4 +1,3 @@
 - documentation on the C64
 - d64 image with packed and unpacked version
-- return to BASIC when exiting (instead of reset)
 - help screen?

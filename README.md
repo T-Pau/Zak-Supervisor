@@ -14,7 +14,7 @@ The first screen lets you load the music from disk and specify how to initialize
 
 **Filename:** Enter the name of the file to load, or leave empty to skip loading (if the music is already in memory).
 
-**Init:** Specify wether to initialize the music with `STA $xxxx` or with `JSR $xxxx`, and the values of the `A`, `X`, and `Y` registers. Usually the music is initialized with `JSR` to the load address of the music, where `A` selects which song to play.
+**Init:** Specify whether to initialize the music with `STA $xxxx` or with `JSR $xxxx`, and the values of the `A`, `X`, and `Y` registers. Usually the music is initialized with `JSR` to the load address of the music, where `A` selects which song to play.
 
 **Play:** Specify which subroutine to call for playing the music (usually the load address plus three), and how often per frame to call the play routine (usually once).
 
@@ -32,9 +32,9 @@ The bottom part shows one page (256 bytes) of memory. Use the cursor keys to mov
 
 The top portion shows the value of the current position and up to eight remembered positions. Set the addresses to monitor with the keys `1` through `8`.
 
-The next section show the amount of raster time currently used as well as the maximum time used so far.
+The next section shows the amount of raster time currently used as well as the maximum time used so far.
 
-The three lines in red and white show the value of one memory location over time. Each column in a pair of lines of the same color show the value after one call to the playback routine. Set the memory location to monitor with the `RETURN` key.
+The three lines in red and white show the value of one memory location over time. Each column in a pair of lines of the same color shows the value after one call to the playback routine. Set the memory location to monitor with the `RETURN` key.
 
 All values are shown in hexadecimal.
 
@@ -52,4 +52,4 @@ Cursor Keys: Select current address within the current page.
 
 `Run-Stop`: Reset maximum raster time.
 
-`Shift E`: Exit program (reset computer).
+`Shift E`: Exit program	.

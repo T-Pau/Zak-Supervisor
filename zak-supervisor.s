@@ -10,8 +10,8 @@
 
 COLOR_BACKGROUND = COLOR_BLACK
 
-COLOR_FOCUS = COLOR_LIGHT_GRAY
-CTRL_COLOR_FOCUS = CTRL_COLOR_LIGHT_GRAY
+COLOR_FOCUS = COLOR_WHITE
+CTRL_COLOR_FOCUS = CTRL_COLOR_WHITE
 
 COLOR_NORMAL = COLOR_MID_GRAY
 CTRL_COLOR_NORMAL = CTRL_COLOR_MID_GRAY
@@ -141,7 +141,7 @@ load_ok:
 	ldx #COLOR_FOCUS
 	jsr color_line
 	ldx #12
-	ldy #15
+	ldy #17
 	clc
 	jsr PLOT
 	jsr read_hex_byte
@@ -157,7 +157,7 @@ load_ok:
 	ldx #COLOR_FOCUS
 	jsr color_line
 	ldx #13
-	ldy #15
+	ldy #17
 	clc
 	jsr PLOT
 	jsr read_hex_byte
@@ -171,7 +171,7 @@ load_ok:
 	ldx #COLOR_FOCUS
 	jsr color_line
 	ldx #14
-	ldy #15
+	ldy #17
 	clc
 	jsr PLOT
 	jsr read_hex_byte
@@ -507,7 +507,7 @@ ignore:
 not_return:
 	cmp #$c5 ; shift E
 	bne ignore
-	jmp RESET
+	brk
 .endscope
 
 .bss

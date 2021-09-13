@@ -4,18 +4,18 @@
               dillo /t'pau
 ````````````````````````````````````````
    music mustn't load to $3000-$3fff,
-    otherwise the program wil crash.
+    otherwise the program will crash.
 ````````````````````````````````````````
 
  filename:
 
- init    : 1: jsr / 2: sta  (1/2)?
-           a: $
-           x: $
-           y: $
-           at : $
+ init:     1: jsr / 2: sta  (1/2)?
+           a:   $
+           x:   $
+           y:   $
+           at:  $
 
- play    : jsr: $
+ play:     jsr: $
            interrupts per frame:
 
 
