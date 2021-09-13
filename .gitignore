@@ -3,3 +3,4 @@
 *.o
 /init.bin
 /monitor.bin
+/zak-supervisor-run.prg

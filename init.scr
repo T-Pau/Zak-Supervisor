@@ -9,10 +9,10 @@
 
  filename:
 
- init    : a: $
+ init    : 1: jsr / 2: sta  (1/2)?
+           a: $
            x: $
            y: $
-           1: jsr / 2: sta  (1/2)?
            at : $
 
  play    : jsr: $

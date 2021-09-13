@@ -79,8 +79,8 @@ start:
 	lda #9
 	ldx #COLOR_MID_GRAY
 	jsr color_line
-	ldx #$09
-	ldy #$0b
+	ldx #9
+	ldy #11
 	clc
 	jsr PLOT
 	lda #CHAR_CURSOR
@@ -99,47 +99,12 @@ start:
 	beq load_ok
 	jmp start
 load_ok:
+	; init: sta or jsr
 	lda #11
 	ldx #COLOR_MID_GRAY
 	jsr color_line
-	ldx #$0b
-	ldy #$0f
-	clc
-	jsr PLOT
-	jsr read_hex_byte
-	sta init_music_a + 1
-	lda #11
-	ldx #COLOR_DARK_GRAY
-	jsr color_line
-	lda #12
-	ldx #COLOR_MID_GRAY
-	jsr color_line
-	ldx #$0c
-	ldy #$0f
-	clc
-	jsr PLOT
-	jsr read_hex_byte
-	sta init_music_x + 1
-	lda #12
-	ldx #COLOR_DARK_GRAY
-	jsr color_line
-	lda #13
-	ldx #COLOR_MID_GRAY
-	jsr color_line
-	ldx #$0d
-	ldy #$0f
-	clc
-	jsr PLOT
-	jsr read_hex_byte
-	sta init_music_y + 1
-	lda #13
-	ldx #COLOR_DARK_GRAY
-	jsr color_line
-	lda #14
-	ldx #COLOR_MID_GRAY
-	jsr color_line
-	ldx #$0e
-	ldy #$23
+	ldx #11
+	ldy #35
 	clc
 	jsr PLOT
 	lda #2
@@ -149,14 +114,61 @@ load_ok:
 	beq :+
 	lda #$8d
 :	sta init_music
+	lda #11
+	ldx #COLOR_DARK_GRAY
+	jsr color_line
+
+	; init: a
+	lda #12
+	ldx #COLOR_MID_GRAY
+	jsr color_line
+	ldx #12
+	ldy #15
+	clc
+	jsr PLOT
+	jsr read_hex_byte
+	sta init_music_a + 1
+	lda #12
+	ldx #COLOR_DARK_GRAY
+	jsr color_line
+	lda init_music
+	bmi read_init_address
+
+	; init: x
+	lda #13
+	ldx #COLOR_MID_GRAY
+	jsr color_line
+	ldx #13
+	ldy #15
+	clc
+	jsr PLOT
+	jsr read_hex_byte
+	sta init_music_x + 1
+	lda #13
+	ldx #COLOR_DARK_GRAY
+	jsr color_line
+
+	; init: y
+	lda #14
+	ldx #COLOR_MID_GRAY
+	jsr color_line
+	ldx #14
+	ldy #15
+	clc
+	jsr PLOT
+	jsr read_hex_byte
+	sta init_music_y + 1
 	lda #14
 	ldx #COLOR_DARK_GRAY
 	jsr color_line
+
+read_init_address:
+	; init: address
 	lda #15
 	ldx #COLOR_MID_GRAY
 	jsr color_line
-	ldx #$0f
-	ldy #$11
+	ldx #15
+	ldy #17
 	clc
 	jsr PLOT
 	jsr read_hex_word
@@ -165,11 +177,13 @@ load_ok:
 	lda #15
 	ldx #COLOR_DARK_GRAY
 	jsr color_line
+
+	; play: address
 	lda #17
 	ldx #COLOR_MID_GRAY
 	jsr color_line
-	ldx #$11
-	ldy #$11
+	ldx #17
+	ldy #17
 	clc
 	jsr PLOT
 	jsr read_hex_word
@@ -178,6 +192,8 @@ load_ok:
 	lda #17
 	ldx #COLOR_DARK_GRAY
 	jsr color_line
+
+	; play: number of interrupts
 	lda #18
 	ldx #COLOR_MID_GRAY
 	jsr color_line
@@ -337,8 +353,11 @@ not_down:
 	jmp update_page_low
 not_up:	cmp #$03 ; run/stop
 	bne not_runstop
-	ldx #$00	; 0 .
-	stx maximum_raster_time
+	ldx #3
+	lda #0
+:	sta maximum_raster_time,x
+	dex
+	bpl :-
 	jmp main_loop
 not_runstop:
 	cmp #$31 ; 1
