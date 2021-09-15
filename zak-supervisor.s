@@ -872,15 +872,19 @@ play_music:
 	sta maximum_raster_time,x
 :	inx
 	stx current_interrupt
-load_monitor_running:
-	lda $ffff
-	jsr format_hex
-	txa
 load_running_index:
 	ldx #$00
-	sta screen_monitor_running,x
-	tya
-	sta screen_monitor_running + 40,x
+	lda color_monitor_running,x
+	and #$f
+	cmp #COLOR_WHITE
+	beq focus_white
+	lda #COLOR_RED
+	bne store_focus
+focus_white:
+	lda #COLOR_LIGHT_GRAY
+store_focus:
+	sta color_monitor_running,x
+	sta color_monitor_running + 40,x
 	inx
 	cpx #40
 	bne :+
@@ -892,9 +896,28 @@ load_running_index:
 	bne inc_end
 :	cpx #200
 	bne inc_end
-	ldx #$00	; 0 .
+	ldx #0
 inc_end:
 	stx load_running_index + 1
+load_monitor_running:
+	lda $ffff
+	jsr format_hex
+	txa
+	ldx load_running_index + 1
+	sta screen_monitor_running,x
+	tya
+	sta screen_monitor_running + 40,x
+	lda color_monitor_running,x
+	and #$f
+	cmp #COLOR_LIGHT_GRAY
+	bpl non_focus_white
+	lda #COLOR_LIGHT_RED
+	bne store_non_focus
+non_focus_white:
+	lda #COLOR_WHITE
+store_non_focus:
+	sta color_monitor_running,x
+	sta color_monitor_running + 40,x
 	rts
 
 
@@ -1121,11 +1144,15 @@ load_monitor_8:
 
 
 init_positions:
-	ldx #$00	; 0 .
-	stx maximum_raster_time
+	ldx #3
+	lda #0
+:	sta maximum_raster_time,x
+	dex
+	bpl :-
+	ldx #199
 	stx load_running_index + 1
-	ldx #$00	; 0 .
-	ldy #$10	; 16 .
+	ldx #$00
+	ldy #$10
 	stx load_monitor_page + 1
 	sty load_monitor_page + 2
 	stx load_monitor_current + 1
@@ -1154,7 +1181,7 @@ init_positions:
 :	lda #COLOR_RED
 	sta color_monitor_running,x
 	sta color_monitor_running + 160,x
-	lda #COLOR_FOCUS
+	lda #COLOR_LIGHT_GRAY
 	sta color_monitor_running + 80,x
 	dex
 	bpl :-
