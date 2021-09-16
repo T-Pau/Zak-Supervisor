@@ -4,7 +4,9 @@
 
 This tool helps you to find the right addresses to monitor for equalizers and other effects synced to the music. It works with any music that can be played by calling a subroutine. It supports one to four calls per frame.
 
-Start the program with `SYS 12800`.
+`ZAK SUPERVISOR` can be started with `RUN`. If the music you are trying to monitor is already in memory (e. g. after a reset when running the program containing the music), you can load `ZAK S. SYS 12800` to avoid overwriting it; start the program with `SYS 12800`.
+
+Zak Supervisor uses the memory from $3000 to $3fff, which means music that also uses that memory range currently can't be monitored with Zak Supervisor.
 
 ## Initialization
 
@@ -52,4 +54,8 @@ Cursor Keys: Select current address within the current page.
 
 `Run-Stop`: Reset maximum raster time.
 
-`Shift E`: Exit program	.
+`Shift E`: Exit program.
+
+# Building Zak Supervisor
+
+Zak Supervisor is written in CC65 assembler. To build it, you need [cc65](https://cc65.github.io), [pucrunch](https://github.com/mist64/pucrunch), GNU make, and Perl. You also need the `c1541` utility from [Vice](http://vice-emu.sourceforge.net).

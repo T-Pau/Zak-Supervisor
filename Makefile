@@ -1,4 +1,12 @@
-all: zak-supervisor.prg zak-supervisor-run.prg
+DISK = zak-supervisor.d64
+PROGRAMS = \
+	zak-supervisor.prg \
+	zak-supervisor-run.prg
+
+all: ${DISK}
+
+${DISK}: ${PROGRAMS} mkd64 filelist
+	perl mkd64 ${DISK} "zak supervisor,21" filelist
 
 zak-supervisor.prg: zak-supervisor.s expand.s init.bin monitor.bin defines.inc c64-asm-3000.cfg
 	cl65 -C c64-asm-3000.cfg -t c64 -o zak-supervisor.prg zak-supervisor.s expand.s
