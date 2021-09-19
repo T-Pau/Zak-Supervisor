@@ -9,7 +9,8 @@ LDFLAGS_64 = -t c64
 DISK = zak-supervisor.d64
 PROGRAMS = \
 	zak-supervisor.prg \
-	zak-supervisor-run.prg
+	zak-supervisor-run.prg \
+	zak-supervisor-docs.prg
 
 all: ${DISK}
 
@@ -33,7 +34,7 @@ CLEAN_FILES = \
 	monitor.bin
 
 ${DISK}: ${PROGRAMS} mkd64 filelist
-	perl mkd64 ${DISK} "zak supervisor,21" filelist
+	perl mkd64 ${DISK} "zak supervisor 2,21" filelist
 
 
 %-64.o : %.s ${DEPDIR}/%-64.o.d | ${DEPDIR}
@@ -52,6 +53,9 @@ zak-supervisor.prg: ${OBJECTS} c64-asm-3000.cfg
 zak-supervisor-run.prg: zak-supervisor.prg
 	pucrunch -ffast -c64 -x12800 zak-supervisor.prg zak-supervisor-run.prg
 
+zak-supervisor-docs.prg: mm2.prg docs.bin
+	cat mm2.prg docs.bin > zak-supervisor-docs.prg
+
 help.bin: help.scr
 	perl screen.pl -c help.scr > help.bin || (rm help.bin; exit 1)
 
@@ -60,5 +64,8 @@ init.bin: init.scr
 
 monitor.bin: monitor.scr
 	perl screen.pl -c monitor.scr > monitor.bin || (rm monitor.bin; exit 1)
+
+docs.bin: docs.scr
+	perl screen.pl -m docs.scr > docs.bin || (rm docs.bin; exit 1)
 
 graphics-64.o: help.bin init.bin monitor.bin

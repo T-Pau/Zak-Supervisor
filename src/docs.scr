@@ -1,0 +1,86 @@
+\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=
+            Zak Supervisor 2
+                   \LG
+\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=
+
+ This tool helps you find the right
+ addresses to monitor for equalizers
+ and other effects synced to music. It
+ works with any music that doesn't load
+ to $3000-$3fff and can be played by
+ calling a subroutine. It supports up
+ to four calls per frame.
+
+ ZAK SUPERVISOR is started with RUN.
+
+ ZAK S. SYS 12800 is started with
+ SYS 12800 and can be used if the music
+ is already in memory (e. g. after a
+ reset of the program containing the
+ music).
+
+ To restart the program without
+ resetting the monitor positions, use
+ SYS 12803.
+
+ The first screen lets you load the
+ music and set its parameters:
+
+ Filename: File to load, leave empty
+   if music is already in memory.
+
+ Init: Whether to initialize via JSR or
+   STA, and the register values and
+   address to use.
+
+ Play: Address of the play routine and
+   how often to call it per frame.
+
+ The second screen is the monitor:
+
+ White bars in the border show the time
+ the playback routine uses.
+
+ The top portion shows the current byte
+ and up to eight remembered positions.
+ Set the addresses with the keys 1 - 8.
+
+ The next section shows the raster time
+ used (current and maximum).
+
+ The three lines in red and white show
+ the value of one byte over time. Each
+ column in a pair of lines of one color
+ shows the value after one call to the
+ playback routine. Set the location to
+ monitor with the RETURN key.
+
+ The bottom part shows one page of
+ memory. Use cursor keys to move within
+ the page , -/+ to switch pages,
+ Shift -/+ for switching by increments
+ of 16.
+
+
+ Keyboard Commands:
+
+ 1-8: Remember address to monitor.
+ RETURN: Set address for colored lines.
+ Cursor Keys: move within current page.
+ -/+: Change current page.
+ Shift -/+: Change page by 16.
+ Run/Stop: Reset maximum raster time.
+ Shift E: Return to BASIC.
+ F7: Toggle help screen.
+
+ This is version 2 of Zak Supervisor.
+
+ The newest version can always be found
+ at:
+     github.com/T-Pau/Zak-Supervisor
+
+\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=
+
+
+                                ` / \LG
+                  \D September 19, 2021
