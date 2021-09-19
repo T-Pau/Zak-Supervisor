@@ -27,8 +27,6 @@
 
 .export start
 
-; for debugging
-.export main_loop_help
 
 .autoimport +
 
@@ -50,8 +48,8 @@
 
 .segment "ENTRY"
 
-jmp start
-jmp restart
+	jmp start
+	jmp restart
 
 .code
 
@@ -472,7 +470,7 @@ not_return:
 not_shift_e:
 	cmp #CTRL_F7
 	bne ignore
-	beq ignore ; TODO: help currently broken, disable for now
+;	beq ignore ; TODO: help currently broken, disable for now
 	inc in_help
 	jsr display_help_screen
 	; FALLTHROUGH to main_loop_help
@@ -509,7 +507,7 @@ display_play_screen:
 	ldx load_monitor_current + 1
 	lda #COLOR_FOCUS
 	sta color_monitor_page,x
-	
+
 	; update positions
 .scope
 	lda #<positions
@@ -540,7 +538,7 @@ tmp_y_1:
 	sta ptr2 + 1
 	iny
 	sty tmp_y_2 + 1
-	
+
 	ldy #3
 	lda init_value
 	jsr format_hex
@@ -555,14 +553,14 @@ tmp_y_1:
 	dey
 	txa
 	sta (ptr2),y
-	
+
 tmp_y_2:
 	ldy #$00
 	cpy #10 * 4
 	bne loop
 .endscope
 	rts
-	
+
 .bss
 
 init_value:
@@ -885,7 +883,7 @@ update_display:
 .scope
 	ldx in_help
 	beq :+
-	rts
+	jmp end_irq
 	; switch back to our charset
 :	ldx #<((screen / $40) | (charset / $400))
 	stx VIC_VIDEO_ADR
@@ -994,6 +992,7 @@ load_monitor_8:
 	inc VIC_BORDERCOLOR
 .endif
 
+end_irq:
 	; bank in kernal and end interrupt
 	ldx #$37
 	stx $01

@@ -1,22 +1,22 @@
-key commands:
+~0          zak supervisor 2          0~
+~1            key commands            1~
+~2                                    2~
+~3  to change the current position:   3~
+~4    cursor keys: move within page   4~
+~5            -/+: change page        5~
+~6      shift -/+: change page by 16  6~
+           (a page is 256 bytes)
 
-current position:
-cursor keys: change byte within page
--/+: change page (hight byte of address)
-shift -/+: change page by 16
+    to set monitoring addresses:
+         1-8: set monitors #1 to #8
+      return: set running monitor
+                (3 colored lines)
 
-set monitoring addresses:
-1-8: set monitors #1 to #8
-return: set running monitor
-  (3 colored lines)
-
-run/stop: reset maximum raster time
-shift e: exit program (return to basic)
-
-press f7 to exit help screen
-
-
-
+    other commands:
+      run/stop: reset raster time
+       shift e: exit program
+                  (return to basic)
+            f7: toggle help screen
 
 
 

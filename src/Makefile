@@ -13,6 +13,9 @@ PROGRAMS = \
 
 all: ${DISK}
 
+clean:
+	rm -f ${CLEAN_FILES}
+
 SOURCES = \
 	expand.s \
 	graphics.s \
@@ -21,6 +24,13 @@ SOURCES = \
 	zak-supervisor.s
 
 OBJECTS = ${SOURCES:%.s=%-64.o}
+
+CLEAN_FILES = \
+	${OBJECTS} \
+	${PROGRAMS} \
+	help.bin \
+	init.bin \
+	monitor.bin
 
 ${DISK}: ${PROGRAMS} mkd64 filelist
 	perl mkd64 ${DISK} "zak supervisor,21" filelist

@@ -4,7 +4,9 @@
 
 This tool helps you to find the right addresses to monitor for equalizers and other effects synced to the music. It works with any music that can be played by calling a subroutine. It supports one to four calls per frame.
 
-`ZAK SUPERVISOR` can be started with `RUN`. If the music you are trying to monitor is already in memory (e. g. after a reset when running the program containing the music), you can load `ZAK S. SYS 12800` to avoid overwriting it; start the program with `SYS 12800`. To restart the program without resetting the monitor positions, use `SYS 12803`.
+`ZAK SUPERVISOR` can be started with `RUN`. If the music you are trying to monitor is already in memory (e. g. after a reset when running the program containing the music), you can load `ZAK S. SYS 12800` to avoid overwriting it; start the program with `SYS 12800`.
+
+To restart the program without resetting the monitor positions, use `SYS 12803`.
 
 Zak Supervisor uses the memory from $3000 to $3fff, which means music that also uses that memory range currently can't be monitored with Zak Supervisor.
 
