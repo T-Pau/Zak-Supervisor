@@ -51,4 +51,4 @@ init.bin: init.scr
 monitor.bin: monitor.scr
 	perl screen.pl -c monitor.scr > monitor.bin || (rm monitor.bin; exit 1)
 
-zak-supervisor-64.o: help.bin init.bin monitor.bin
+graphics-64.o: help.bin init.bin monitor.bin
