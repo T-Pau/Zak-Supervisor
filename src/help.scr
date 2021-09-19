@@ -1,0 +1,25 @@
+key commands:
+
+current position:
+cursor keys: change byte within page
+-/+: change page (hight byte of address)
+shift -/+: change page by 16
+
+set monitoring addresses:
+1-8: set monitors #1 to #8
+return: set running monitor
+  (3 colored lines)
+
+run/stop: reset maximum raster time
+shift e: exit program (return to basic)
+
+press f7 to exit help screen
+
+
+
+
+
+
+
+
+

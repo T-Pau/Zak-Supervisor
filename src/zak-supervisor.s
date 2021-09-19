@@ -27,31 +27,12 @@
 
 .export start
 
+; for debugging
+.export main_loop_help
+
 .autoimport +
 
-.include "c64.inc"
-.include "cbm_kernal.inc"
-.include "defines.inc"
-
-.macpack cbm
-
-COLOR_BACKGROUND = COLOR_BLACK
-
-COLOR_FOCUS = COLOR_WHITE
-CTRL_COLOR_FOCUS = CTRL_COLOR_WHITE
-
-COLOR_NORMAL = COLOR_MID_GRAY
-CTRL_COLOR_NORMAL = CTRL_COLOR_MID_GRAY
-
-COLOR_DISABLED = COLOR_DARK_GRAY
-
-COLOR_LINE1 = COLOR_RED
-COLOR_LINE2 = COLOR_WHITE
-
-; DEBUG_DISPLAY = 1
-
-GETIN_CHECKED = $e124
-Se544 = $e544
+.include "zak-supervisor.inc"
 
 ; keys:
 
@@ -67,40 +48,10 @@ Se544 = $e544
 ; Run/Stop - reset maximum raster time
 ; Shift-E - exit (reset)
 
-screen = $0400
-screen_monitor_current = screen + 33
-screen_monitor_1 = screen + 2 * 40 + 17
-screen_monitor_2 = screen + 3 * 40 + 17
-screen_monitor_3 = screen + 4 * 40 + 17
-screen_monitor_4 = screen + 5 * 40 + 17
-screen_monitor_5 = screen + 2 * 40 + 34
-screen_monitor_6 = screen + 3 * 40 + 34
-screen_monitor_7 = screen + 4 * 40 + 34
-screen_monitor_8 = screen + 5 * 40 + 34
-screen_monitor_running = screen + 11 * 40
-color_monitor_running = COLOR_RAM + 11 * 40
-screen_position_running = screen + 17 * 40 + 18
-screen_monitor_page = screen + 1000 - 256
-color_monitor_page = COLOR_RAM + 1000 - 256
-screen_rastertime_current = screen + 8 * 40 + 18
-screen_rastertime_maximum = screen + 9 * 40 + 18
+.segment "ENTRY"
 
-screen_filename = screen + 9 * 40 + 11
-
-CHAR_CURSOR = $5f ; _
-
-
-.macro copy_screen source
-	lda #<source
-	sta ptr1
-	lda #>source
-	sta ptr1 + 1
-	lda #<screen
-	sta ptr2
-	lda #>screen
-	sta ptr2 + 1
-	jsr expand
-.endmacro
+jmp start
+jmp restart
 
 .code
 
@@ -249,30 +200,13 @@ read_init_address:
 	lda #4
 	jsr read_digit
 	stx number_of_interrupts
+	jsr init_positions
 
 setup_playing_screen:
-	lda #CTRL_COLOR_NORMAL
-	jsr BSOUT
-	jsr Se544 ; TODO: symbolize
-	copy_screen playing_screen
-	ldx #0
-	ldy #0
-	lda #$24 ; '$'
-:	sta screen_rastertime_current - 1,y
-	sta screen_rastertime_maximum - 1,y
-	iny
-	iny
-	iny
-	iny
-	iny
-	inx
-	cpx number_of_interrupts
-	bne :-
-
-	jsr init_positions
 	ldx #0
 	stx current_interrupt
-	; TODO: add $ for raster time of interrupts 2..
+	stx in_help
+	jsr display_play_screen
 	sei
 	ldx #$01	; 1 .
 	stx VIC_IMR
@@ -316,7 +250,7 @@ update_page:
 	sta load_monitor_page + 2
 	jsr format_hex
 	stx screen_monitor_current - 8
-	sty screen_monitor_current - 7
+	sta screen_monitor_current - 7
 	jmp main_loop
 not_plus:
 	cmp #$2d ; -
@@ -354,7 +288,7 @@ update_page_low:
 	txa
 	jsr format_hex
 	stx screen_monitor_current - 6
-	sty screen_monitor_current - 5
+	sta screen_monitor_current - 5
 	jmp main_loop
 not_right:
 	cmp #$9d ; left
@@ -411,12 +345,12 @@ not_runstop:
 	sta load_monitor_1 + 1
 	jsr format_hex
 	stx screen_monitor_1 - 6
-	sty screen_monitor_1 - 5
+	sta screen_monitor_1 - 5
 	lda load_monitor_current + 2
 	sta load_monitor_1 + 2
 	jsr format_hex
 	stx screen_monitor_1 - 8
-	sty screen_monitor_1 - 7
+	sta screen_monitor_1 - 7
 	jmp main_loop
 not_one:
 	cmp #$32 ; 2
@@ -425,12 +359,12 @@ not_one:
 	sta load_monitor_2 + 1
 	jsr format_hex
 	stx screen_monitor_2 - 6
-	sty screen_monitor_2 - 5
+	sta screen_monitor_2 - 5
 	lda load_monitor_current + 2
 	sta load_monitor_2 + 2
 	jsr format_hex
 	stx screen_monitor_2 - 8
-	sty screen_monitor_2 - 7
+	sta screen_monitor_2 - 7
 	jmp main_loop
 not_two:
 	cmp #$33 ; 3
@@ -439,12 +373,12 @@ not_two:
 	sta load_monitor_3 + 1
 	jsr format_hex
 	stx screen_monitor_3 - 6
-	sty screen_monitor_3 - 5
+	sta screen_monitor_3 - 5
 	lda load_monitor_current + 2
 	sta load_monitor_3 + 2
 	jsr format_hex
 	stx screen_monitor_3 - 8
-	sty screen_monitor_3 - 7
+	sta screen_monitor_3 - 7
 	jmp main_loop
 not_three:
 	cmp #$34 ; 4
@@ -453,12 +387,12 @@ not_three:
 	sta load_monitor_4 + 1
 	jsr format_hex
 	stx screen_monitor_4 - 6
-	sty screen_monitor_4 - 5
+	sta screen_monitor_4 - 5
 	lda load_monitor_current + 2
 	sta load_monitor_4 + 2
 	jsr format_hex
 	stx screen_monitor_4 - 8
-	sty screen_monitor_4 - 7
+	sta screen_monitor_4 - 7
 	jmp main_loop
 not_four:
 	cmp #$35 ; 5
@@ -467,12 +401,12 @@ not_four:
 	sta load_monitor_5 + 1
 	jsr format_hex
 	stx screen_monitor_5 - 6
-	sty screen_monitor_5 - 5
+	sta screen_monitor_5 - 5
 	lda load_monitor_current + 2
 	sta load_monitor_5 + 2
 	jsr format_hex
 	stx screen_monitor_5 - 8
-	sty screen_monitor_5 - 7
+	sta screen_monitor_5 - 7
 	jmp main_loop
 not_five:
 	cmp #$36 ; 6
@@ -481,12 +415,12 @@ not_five:
 	sta load_monitor_6 + 1
 	jsr format_hex
 	stx screen_monitor_6 - 6
-	sty screen_monitor_6 - 5
+	sta screen_monitor_6 - 5
 	lda load_monitor_current + 2
 	sta load_monitor_6 + 2
 	jsr format_hex
 	stx screen_monitor_6 - 8
-	sty screen_monitor_6 - 7
+	sta screen_monitor_6 - 7
 	jmp main_loop
 not_six:
 	cmp #$37 ; 7
@@ -495,12 +429,12 @@ not_six:
 	sta load_monitor_7 + 1
 	jsr format_hex
 	stx screen_monitor_7 - 6
-	sty screen_monitor_7 - 5
+	sta screen_monitor_7 - 5
 	lda load_monitor_current + 2
 	sta load_monitor_7 + 2
 	jsr format_hex
 	stx screen_monitor_7 - 8
-	sty screen_monitor_7 - 7
+	sta screen_monitor_7 - 7
 	jmp main_loop
 not_seven:
 	cmp #$38 ; 8
@@ -509,12 +443,12 @@ not_seven:
 	sta load_monitor_8 + 1
 	jsr format_hex
 	stx screen_monitor_8 - 6
-	sty screen_monitor_8 - 5
+	sta screen_monitor_8 - 5
 	lda load_monitor_current + 2
 	sta load_monitor_8 + 2
 	jsr format_hex
 	stx screen_monitor_8 - 8
-	sty screen_monitor_8 - 7
+	sta screen_monitor_8 - 7
 	jmp main_loop
 not_eight:
 	cmp #$0d ; return
@@ -523,80 +457,148 @@ not_eight:
 	sta load_monitor_running + 1
 	jsr format_hex
 	stx screen_position_running + 2
-	sty screen_position_running + 3
+	sta screen_position_running + 3
 	lda load_monitor_current + 2
 	sta load_monitor_running + 2
 	jsr format_hex
 	stx screen_position_running
-	sty screen_position_running + 1
+	sta screen_position_running + 1
 ignore:
 	jmp main_loop
 not_return:
 	cmp #$c5 ; shift E
-	bne ignore
+	bne not_shift_e
 	brk
+not_shift_e:
+	cmp #CTRL_F7
+	bne ignore
+	beq ignore ; TODO: help currently broken, disable for now
+	inc in_help
+	jsr display_help_screen
+	; FALLTHROUGH to main_loop_help
 .endscope
 
+main_loop_help:
+	jsr GETIN_CHECKED
+	cmp #CTRL_F7
+	bne main_loop_help
+	jsr display_play_screen
+	dec in_help
+	jmp main_loop
+
+
+display_play_screen:
+	lda #COLOR_NORMAL
+	jsr color_screen
+	copy_screen playing_screen
+	ldx #0
+	ldy #0
+	lda #$24 ; '$'
+:	sta screen_rastertime_current - 1,y
+	sta screen_rastertime_maximum - 1,y
+	iny
+	iny
+	iny
+	iny
+	iny
+	inx
+	cpx number_of_interrupts
+	bne :-
+	ldx #199
+	stx running_index
+	ldx load_monitor_current + 1
+	lda #COLOR_FOCUS
+	sta color_monitor_page,x
+	
+	; update positions
+.scope
+	lda #<positions
+	sta ptr1
+	lda #>positions
+	sta ptr1 + 1
+	ldy #0
+loop:
+	lda (ptr1),y
+	sta ptr2
+	iny
+	lda (ptr1),y
+	sta ptr2 + 1
+	sty tmp_y_1 + 1
+	ldy #0
+	lda (ptr2),y
+	sta init_value
+	iny
+	lda (ptr2),y
+	sta init_value + 1
+tmp_y_1:
+	ldy #00
+	iny
+	lda (ptr1),y
+	sta ptr2
+	iny
+	lda (ptr1),y
+	sta ptr2 + 1
+	iny
+	sty tmp_y_2 + 1
+	
+	ldy #3
+	lda init_value
+	jsr format_hex
+	sta (ptr2),y
+	dey
+	txa
+	sta (ptr2),y
+	dey
+	lda init_value + 1
+	jsr format_hex
+	sta (ptr2),y
+	dey
+	txa
+	sta (ptr2),y
+	
+tmp_y_2:
+	ldy #$00
+	cpy #10 * 4
+	bne loop
+.endscope
+	rts
+	
 .bss
+
+init_value:
+	.res 2
+
+.rodata
+positions:
+	.word load_monitor_current + 1, screen_monitor_current - 8
+	.word load_monitor_1 + 1, screen_monitor_1 - 8
+	.word load_monitor_2 + 1, screen_monitor_2 - 8
+	.word load_monitor_3 + 1, screen_monitor_3 - 8
+	.word load_monitor_4 + 1, screen_monitor_4 - 8
+	.word load_monitor_5 + 1, screen_monitor_5 - 8
+	.word load_monitor_6 + 1, screen_monitor_6 - 8
+	.word load_monitor_7 + 1, screen_monitor_7 - 8
+	.word load_monitor_8 + 1, screen_monitor_8 - 8
+	.word load_monitor_running + 1, screen_position_running
+
+display_help_screen:
+	lda #COLOR_NORMAL
+	jsr color_screen
+	copy_screen help_screen
+	rts
+
+.bss
+
+in_help:
+	.res 1
+
+running_index:
+	.res 1
 
 number_of_interrupts:
 	.res 1
 current_interrupt:
 	.res 1
-
-last_hex_digit:
-	.res 1
-
-.code
-; read hex digit, returns digit in A and last_hex_digit
-; returns $81 for return, $80 for backspace
-read_hex_digit:
-.scope
-	jsr GETIN_CHECKED
-	beq read_hex_digit
-	cmp #$30 ; '0'
-	bmi control
-	cmp #$3a ; ':'
-	bpl :+
-	sta last_hex_digit
-	sec
-	sbc #$30
-	rts
-:	cmp #$41	; 'A'
-	bmi read_hex_digit
-	cmp #$47	; 'G'
-	bpl read_hex_digit
-	sta last_hex_digit
-	sec
-	sbc #$37
-	rts
-control:
-	cmp #$0d
-	bne :+
-	lda #$81
-	rts
-:	cmp #$14
-	bne read_hex_digit
-	lda #$80
-	rts
-.endscope
-
-backspace_with_cursor:
-	lda #$14 ; backspace
-	jsr BSOUT
-	lda #$14 ; backspace
-	jsr BSOUT
-	lda #CHAR_CURSOR ; '_'
-	jmp BSOUT
-
-bsout_with_cursor:
-	pha
-	lda #$14
-	jsr BSOUT
-	pla
-	jsr BSOUT
-	lda #CHAR_CURSOR
-	jmp BSOUT
 
 .bss
 
@@ -678,194 +680,17 @@ load_music:
 filename:
 	.res 17
 
-.bss
-; TODO: move to bss and into read_hex_byte scope
-hex_byte:
-	.res 1
-
-.code
-read_hex_byte:
-.scope
-	lda #CHAR_CURSOR
-	jsr BSOUT
-read_first_digit:
-	jsr read_hex_digit
-	bmi read_first_digit
-	asl
-	asl
-	asl
-	asl
-	sta hex_byte
-	lda last_hex_digit
-	jsr bsout_with_cursor
-read_second_digit:
-	jsr read_hex_digit
-	bmi :+
-	ora hex_byte
-	sta hex_byte
-	lda last_hex_digit
-	jsr bsout_with_cursor
-	jmp read_return
-:	cmp #$81
-	beq read_second_digit
-	jsr backspace_with_cursor
-	jmp read_first_digit
-read_return:
-	jsr read_hex_digit
-	bpl read_return
-	cmp #$81	; 129 .
-	beq end
-	jsr backspace_with_cursor
-	lda #$f0	; 240 .
-	and hex_byte
-	sta hex_byte
-	jmp read_second_digit
-end:
-	lda #$14	; 20 .
-	jsr BSOUT
-	lda hex_byte
-	rts
-.endscope
-
-
-.bss
-
-; TOOD: move to bss and into scope of read_hex_word
-hex_word:
-	.res 2
 
 .code
 
-; reads hex word, returns in x/y
-read_hex_word:
-.scope
-	lda #CHAR_CURSOR
-	jsr BSOUT
-read_first_digit:
-	jsr read_hex_digit
-	bmi read_first_digit
-	asl
-	asl
-	asl
-	asl
-	sta hex_word
-	lda last_hex_digit
-	jsr bsout_with_cursor
-read_second_digit:
-	jsr read_hex_digit
-	bmi :+
-	ora hex_word
-	sta hex_word
-	lda last_hex_digit
-	jsr bsout_with_cursor
-	jmp read_third_digit
-:	cmp #$81
-	beq read_second_digit
-	jsr backspace_with_cursor
-	jmp read_first_digit
-read_third_digit:
-	jsr read_hex_digit
-	bmi :+
-	asl
-	asl
-	asl
-	asl
-	sta hex_word + 1
-	lda last_hex_digit
-	jsr bsout_with_cursor
-	jmp read_fourth_digit
-:	cmp #$81
-	beq read_third_digit
-	jsr backspace_with_cursor
-	lda #$f0
-	and hex_word
-	sta hex_word
-	jmp read_second_digit
-read_fourth_digit:
-	jsr read_hex_digit
-	bmi :+
-	ora hex_word + 1
-	sta hex_word + 1
-	lda last_hex_digit
-	jsr bsout_with_cursor
-	jmp read_return
-:	cmp #$81
-	beq read_fourth_digit
-	jsr backspace_with_cursor
-	jmp read_third_digit
-read_return:
-	jsr read_hex_digit
-	bpl read_return
-	cmp #$81
-	beq end
-	jsr backspace_with_cursor
-	lda #$f0
-	and hex_word + 1
-	sta hex_word + 1
-	jmp read_fourth_digit
-end:
-	lda #$14	; 20 .
-	jsr BSOUT
-	ldx hex_word
-	ldy hex_word + 1
-	rts
-.endscope
-
-
-.bss
-
-; TODO: move to bss, into scope of read_one_or_two
-digit:
-	.res 1
-max_digit:
-	.res 1
-
-.code
-
-; maximum allowed digit in A
-; returns digit read in X
-read_digit:
-.scope
-	clc
-	adc #$31
-	sta max_digit
-	lda #CHAR_CURSOR
-	jsr BSOUT
-read_digit:
-	jsr GETIN_CHECKED
-	cmp #$31 ; '1'
-	bmi read_digit
-	cmp max_digit
-	bpl read_digit
-	sta tmp1
-	sec
-	sbc #$30 ; '0'
-	sta digit
-	lda tmp1
-	jsr bsout_with_cursor
-read_return:
-	jsr GETIN_CHECKED
-	cmp #$0d
-	beq end
-	cmp #$14
-	bne read_return
-	jsr backspace_with_cursor
-	jmp read_digit
-end:
-	lda #$14
-	jsr BSOUT
-	ldx digit
-	rts
-.endscope
-
-; restart without init, not currently supported
-;start_without_init:
-;	ldx #COLOR_BACKGROUND
-;	stx VIC_BORDERCOLOR
-;	stx VIC_BG_COLOR0
-;	ldx #<((screen / $40) | (charset / $400))
-;	stx VIC_VIDEO_ADR
-;	jmp setup_playing_screen
+; restart without init
+restart:
+	ldx #COLOR_BACKGROUND
+	stx VIC_BORDERCOLOR
+	stx VIC_BG_COLOR0
+	ldx #<((screen / $40) | (charset / $400))
+	stx VIC_VIDEO_ADR
+	jmp setup_playing_screen
 
 .bss
 
@@ -899,17 +724,18 @@ play_music:
 	sta maximum_raster_time,x
 :	inx
 	stx current_interrupt
-load_running_index:
-	ldx #$00
-	lda color_monitor_running,x
-	and #$f
-	cmp #COLOR_WHITE
-	beq focus_white
-	lda #COLOR_RED
-	bne store_focus
-focus_white:
-	lda #COLOR_LIGHT_GRAY
-store_focus:
+	ldx in_help
+	bne end_play
+	ldx running_index
+	cpx #40
+	bcc non_focus_line1
+	cpx #121
+	bcs non_focus_line1
+	lda #COLOR_LINE2
+	bne store_non_focus
+non_focus_line1:
+	lda #COLOR_LINE1
+store_non_focus:
 	sta color_monitor_running,x
 	sta color_monitor_running + 40,x
 	inx
@@ -925,26 +751,28 @@ store_focus:
 	bne inc_end
 	ldx #0
 inc_end:
-	stx load_running_index + 1
+	stx running_index
 load_monitor_running:
 	lda $ffff
 	jsr format_hex
+	tay
 	txa
-	ldx load_running_index + 1
+	ldx running_index
 	sta screen_monitor_running,x
 	tya
 	sta screen_monitor_running + 40,x
-	lda color_monitor_running,x
-	and #$f
-	cmp #COLOR_LIGHT_GRAY
-	bpl non_focus_white
-	lda #COLOR_LIGHT_RED
-	bne store_non_focus
-non_focus_white:
-	lda #COLOR_WHITE
-store_non_focus:
+	cpx #40
+	bcc focus_line1
+	cpx #121
+	bcs focus_line1
+	lda #COLOR_LINE2_FOCUS
+	bne store_focus
+focus_line1:
+	lda #COLOR_LINE1_FOCUS
+store_focus:
 	sta color_monitor_running,x
 	sta color_monitor_running + 40,x
+end_play:
 	rts
 
 
@@ -1029,6 +857,8 @@ irq_quadruple:
 
 ; offset in A, number of bytes in X
 update_monitor_page:
+	ldy in_help
+	bne end_update_monitor_page
 .ifdef DEBUG_DISPLAY
 	dec VIC_BORDERCOLOR
 .endif
@@ -1048,11 +878,16 @@ load_monitor_page:
 .ifdef DEBUG_DISPLAY
 	inc VIC_BORDERCOLOR
 .endif
+end_update_monitor_page:
 	rts
 
 update_display:
+.scope
+	ldx in_help
+	beq :+
+	rts
 	; switch back to our charset
-	ldx #<((screen / $40) | (charset / $400))
+:	ldx #<((screen / $40) | (charset / $400))
 	stx VIC_VIDEO_ADR
 
 .ifdef DEBUG_DISPLAY
@@ -1060,47 +895,44 @@ update_display:
 .endif
 
 	; update raster times
-.scope
 	ldx #<screen_rastertime_current
-	stx ptr1
+	stx ptr3
 	ldx #>screen_rastertime_current
-	stx ptr1 + 1
+	stx ptr3 + 1
 	ldx #<screen_rastertime_maximum
-	stx ptr2
+	stx ptr4
 	ldx #>screen_rastertime_maximum
-	stx ptr2 + 1
+	stx ptr4 + 1
 	ldy #0
 loop:
 	sty current_interrupt
 	lda current_raster_time,y
 	jsr format_hex
-	tya
 	ldy #1
-	sta (ptr1),y
+	sta (ptr3),y
 	txa
 	dey
-	sta (ptr1),y
+	sta (ptr3),y
 	ldy current_interrupt
 	lda maximum_raster_time,y
 	jsr format_hex
-	tya
 	ldy #1
-	sta (ptr2),y
+	sta (ptr4),y
 	txa
 	dey
-	sta (ptr2),y
+	sta (ptr4),y
 	clc
 	lda #5
-	adc ptr1
-	sta ptr1
+	adc ptr3
+	sta ptr3
 	bcc :+
-	inc ptr1 + 1
+	inc ptr3 + 1
 	clc
 :	lda #5
-	adc ptr2
-	sta ptr2
+	adc ptr4
+	sta ptr4
 	bcc :+
-	inc ptr2 + 1
+	inc ptr4 + 1
 :	ldy current_interrupt
 	iny
 	cpy number_of_interrupts
@@ -1112,47 +944,47 @@ load_monitor_current:
 	lda $ffff
 	jsr format_hex
 	stx screen_monitor_current
-	sty screen_monitor_current + 1
+	sta screen_monitor_current + 1
 load_monitor_1:
 	lda $ffff
 	jsr format_hex
 	stx screen_monitor_1
-	sty screen_monitor_1 + 1
+	sta screen_monitor_1 + 1
 load_monitor_2:
 	lda $ffff
 	jsr format_hex
 	stx screen_monitor_2
-	sty screen_monitor_2 + 1
+	sta screen_monitor_2 + 1
 load_monitor_3:
 	lda $ffff
 	jsr format_hex
 	stx screen_monitor_3
-	sty screen_monitor_3 + 1
+	sta screen_monitor_3 + 1
 load_monitor_4:
 	lda $ffff
 	jsr format_hex
 	stx screen_monitor_4
-	sty screen_monitor_4 + 1
+	sta screen_monitor_4 + 1
 load_monitor_5:
 	lda $ffff
 	jsr format_hex
 	stx screen_monitor_5
-	sty screen_monitor_5 + 1
+	sta screen_monitor_5 + 1
 load_monitor_6:
 	lda $ffff
 	jsr format_hex
 	stx screen_monitor_6
-	sty screen_monitor_6 + 1
+	sta screen_monitor_6 + 1
 load_monitor_7:
 	lda $ffff
 	jsr format_hex
 	stx screen_monitor_7
-	sty screen_monitor_7 + 1
+	sta screen_monitor_7 + 1
 load_monitor_8:
 	lda $ffff
 	jsr format_hex
 	stx screen_monitor_8
-	sty screen_monitor_8 + 1
+	sta screen_monitor_8 + 1
 
 	; reset current interrupt
 	ldx #$00
@@ -1176,8 +1008,6 @@ init_positions:
 :	sta maximum_raster_time,x
 	dex
 	bpl :-
-	ldx #199
-	stx load_running_index + 1
 	ldx #$00
 	ldy #$10
 	stx load_monitor_page + 1
@@ -1202,19 +1032,11 @@ init_positions:
 	sty load_monitor_8 + 2
 	stx load_monitor_running + 1
 	sty load_monitor_running + 2
-	ldx #COLOR_FOCUS
-	stx color_monitor_page
-	ldx #79
-:	lda #COLOR_RED
-	sta color_monitor_running,x
-	sta color_monitor_running + 160,x
-	lda #COLOR_LIGHT_GRAY
-	sta color_monitor_running + 80,x
-	dex
-	bpl :-
 	rts
 
-; converts A to two hex digits returned in x/y
+
+
+; converts A to two hex digits returned in x/a
 format_hex:
 .scope
 	pha
@@ -1243,11 +1065,13 @@ digit_low:
 	clc
 	adc #$30	; 48 0
 end_low:
-	tay
 	rts
 .endscope
 
 switch_for_page:
+.scope
+	ldx in_help
+	bne end
 	ldx #192
 :	cpx VIC_HLINE
 	bcs :-
@@ -1256,54 +1080,13 @@ switch_for_page:
 	bne :-
 	ldx #$17
 	stx VIC_VIDEO_ADR
-	rts
-
-; line number in A, color in X
-; uses tmp1, pt1, A, Y
-color_line:
-.scope
-	; 40 is %101000
-	sta tmp1
-	ldy #0
-	sty ptr1 + 1
-	asl
-	rol ptr1 + 1
-	asl
-	rol ptr1 + 1
-	adc tmp1
-	asl
-	rol ptr1 + 1
-	asl
-	rol ptr1 + 1
-	asl
-	rol ptr1 + 1
-	sta ptr1
-	lda #>COLOR_RAM
-	clc
-	adc ptr1 + 1
-	sta ptr1 + 1
-	txa
-	ldy #39
-:	sta (ptr1),y
-	dey
-	bpl :-
+end:
 	rts
 .endscope
+
 
 wait_for_high_set:
 :	lda VIC_CTRL1
 	bpl :-
 	rts
 
-.rodata
-
-start_screen:
-	.incbin "init.bin"
-
-playing_screen:
-	.incbin "monitor.bin"
-
-.segment "CHARSET"
-
-charset:
-	.incbin "charset.bin"

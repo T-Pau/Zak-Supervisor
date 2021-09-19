@@ -1,3 +1,4 @@
 - documentation on the C64
-- d64 image with packed and unpacked version
-- help screen?
+
+- update monitor positions in `display_play_screen`
+- update focus color for current position in page in `display_play_screen`

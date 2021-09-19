@@ -1,7 +1,10 @@
-/.DS_Store
-/zak-supervisor.prg
+.DS_Store
 *.o
-/init.bin
-/monitor.bin
-/zak-supervisor-run.prg
-/zak-supervisor.d64
+/src/.deps
+/src/help.bin
+/src/init.bin
+/src/monitor.bin
+/src/zak-supervisor.prg
+/src/zak-supervisor-run.prg
+/src/zak-supervisor.d64
+/src/zak-supervisor.sym

@@ -39,6 +39,7 @@ CTRL_CURSOR_RIGHT = $1D
 CTRL_COLOR_GREEN = $1E
 CTRL_COLOR_BLUE = $1F
 CTRL_COLOR_ORANGE = $81
+CTRL_F7 = $88
 CTRL_UPPERCASE = $8E
 CTRL_COLOR_BLACK = $90
 CTRL_CURSOR_UP = $91
@@ -86,9 +87,12 @@ LAST_DEVICE = $ba
 ENDIRQ = $ea31
 RESET = $fce2
 
+; main loop
 tmp1 = $02
 ptr1 = $fb
 ptr2 = $fd
+
+; interrupt
 ptr3 = $55
 ptr4 = $71
 

@@ -1,21 +1,30 @@
-DISK = zak-supervisor.d64
-PROGRAMS = \
-	zak-supervisor.prg \
-	zak-supervisor-run.prg
+SUBDIRS = src
 
-all: ${DISK}
+VERSION = 2.0
 
-${DISK}: ${PROGRAMS} mkd64 filelist
-	perl mkd64 ${DISK} "zak supervisor,21" filelist
+FILES = \
+	README.md \
+	init-screen.png \
+	monitoring-screen.png \
+	src/zak-supervisor.d64
 
-zak-supervisor.prg: zak-supervisor.s expand.s init.bin monitor.bin defines.inc c64-asm-3000.cfg
-	cl65 -C c64-asm-3000.cfg -t c64 -o zak-supervisor.prg zak-supervisor.s expand.s
+DISTFILE = Zak-Supervisor-${VERSION}.zip
 
-zak-supervisor-run.prg: zak-supervisor.prg
-	pucrunch -ffast -c64 -x12800 zak-supervisor.prg zak-supervisor-run.prg
+.PHONY: all clean dist
 
-init.bin: init.scr
-	perl screen.pl -c init.scr > init.bin || (rm init.bin; exit 1)
+all:
+	@for dir in ${SUBDIRS}; \
+	do \
+		(cd $$dir && make VERSION="${VERSION}" all) || exit 1; \
+	done
 
-monitor.bin: monitor.scr
-	perl screen.pl -c monitor.scr > monitor.bin || (rm monitor.bin; exit 1)
+dist: ${DISTFILE}
+
+clean:
+	@for dir in ${SUBDIRS}; \
+	do \
+		(cd $$dir && make clean) || exit 1; \
+	done
+
+${DISTFILE}: ${FILES}
+	zip -9jq ${DISTFILE} ${FILES}
