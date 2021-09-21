@@ -2,7 +2,7 @@
 
 ## Play and monitor music on your C64.
 
-This tool helps you to find the right addresses to monitor for equalizers and other effects synced to the music. It works with any music that can be played by calling a subroutine. It supports one to four calls per frame.
+This tool helps you find the right addresses to monitor for equalizers and other effects synced to the music. It works with any music that can be played by calling a subroutine. It supports one to four calls per frame.
 
 `ZAK SUPERVISOR` can be started with `RUN`. If the music you are trying to monitor is already in memory (e. g. after a reset when running the program containing the music), you can load `ZAK S. SYS 12800` to avoid overwriting it; start the program with `SYS 12800`.
 
