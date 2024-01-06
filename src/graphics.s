@@ -1,5 +1,5 @@
 ;  graphcis.s -- charset and screen contents
-;  Copyright (C) 2021 Dieter Baron
+;  Copyright (C) Dieter Baron
 ;
 ;  This file is part of Zak Supervisor, a Music Monitor for the Commodore 64.
 ;  The authors can be contacted at <zak-supervisor@tpau.group>.
@@ -25,21 +25,22 @@
 ;  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 ;  IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+.section data
 
-.export start_screen, playing_screen, help_screen, charset
+start_screen {
+    .include "init.inc"
+}
 
-.rodata
+playing_screen {
+    .include "monitor.inc"
+}
 
-start_screen:
-	.incbin "init.bin"
+help_screen {
+    .include "help.inc"
+}
 
-playing_screen:
-	.incbin "monitor.bin"
+.section charset
 
-help_screen:
-	.incbin "help.bin"
-
-.segment "CHARSET"
-
-charset:
-	.incbin "charset.bin"
+charset {
+    .include "charset.inc"
+}

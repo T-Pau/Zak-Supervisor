@@ -1,0 +1,37 @@
+.cpu "6502"
+
+.section zero_page {
+    type: reserve_only
+    address [
+        : $02       ; Unused.
+;        : $19 - $21 ; Temporary string stack.
+        : $26 - $2a ; Floating point result of multiplication or division.
+        : $fb - $fe ; Unused.
+    ]
+}
+
+program_start = $3000
+program_end = $7fff
+
+.segment program {
+    address: program_start - program_end
+}
+
+.section code {
+    segment: program
+}
+
+.section data {
+    segment: program
+}
+
+.section charset {
+    address: $3000 - $3200
+}
+
+.section reserved {
+    type: reserve_only
+    segment: program
+}
+
+.include "commodore-prg.inc"

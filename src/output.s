@@ -1,5 +1,5 @@
 ;  output.s -- output routines
-;  Copyright (C) 1990-2021 Dieter Baron
+;  Copyright (C) Dieter Baron
 ;
 ;  This file is part of Zak Supervisor, a Music Monitor for the Commodore 64.
 ;  The authors can be contacted at <zak-supervisor@tpau.group>.
@@ -25,76 +25,68 @@
 ;  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 ;  IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-.export backspace_with_cursor, bsout_with_cursor, color_screen, color_line
+.section code 
 
-.include "zak-supervisor.inc"
+backspace_with_cursor {
+    lda #$14 ; backspace
+    jsr CHROUT
+    lda #$14 ; backspace
+    jsr CHROUT
+    lda #CHAR_CURSOR ; '_'
+    jmp CHROUT
+}
 
-backspace_with_cursor:
-.scope
-	lda #$14 ; backspace
-	jsr BSOUT
-	lda #$14 ; backspace
-	jsr BSOUT
-	lda #CHAR_CURSOR ; '_'
-	jmp BSOUT
-.endscope
-
-
-bsout_with_cursor:
-.scope
-	pha
-	lda #$14
-	jsr BSOUT
-	pla
-	jsr BSOUT
-	lda #CHAR_CURSOR
-	jmp BSOUT
-.endscope
+bsout_with_cursor {
+    pha
+    lda #$14
+    jsr CHROUT
+    pla
+    jsr CHROUT
+    lda #CHAR_CURSOR
+    jmp CHROUT
+}
 
 
 ; fills color ram with color
-color_screen:
-.scope
-	ldx #0
-:	sta COLOR_RAM,x
-	sta COLOR_RAM + $100,x
-	sta COLOR_RAM + $200,x
-	sta COLOR_RAM + 1000 - $100,x
-	dex
-	bne :-
-	rts
-.endscope
-
+color_screen {
+    ldx #0
+:   sta COLOR_RAM,x
+    sta COLOR_RAM + $100,x
+    sta COLOR_RAM + $200,x
+    sta COLOR_RAM + 1000 - $100,x
+    dex
+    bne :-
+    rts
+}
 
 ; fills one line in color ram with color
 ; line number in A, color in X
-; uses tmp1, pt1, A, Y
-color_line:
-.scope
-	; 40 is %101000
-	sta tmp1
-	ldy #0
-	sty ptr1 + 1
-	asl
-	rol ptr1 + 1
-	asl
-	rol ptr1 + 1
-	adc tmp1
-	asl
-	rol ptr1 + 1
-	asl
-	rol ptr1 + 1
-	asl
-	rol ptr1 + 1
-	sta ptr1
-	lda #>COLOR_RAM
-	clc
-	adc ptr1 + 1
-	sta ptr1 + 1
-	txa
-	ldy #39
-:	sta (ptr1),y
-	dey
-	bpl :-
-	rts
-.endscope
+; uses tmp1, ptr1, A, Y
+color_line {
+    ; 40 is %101000
+    sta tmp1
+    ldy #0
+    sty ptr1 + 1
+    asl
+    rol ptr1 + 1
+    asl
+    rol ptr1 + 1
+    adc tmp1
+    asl
+    rol ptr1 + 1
+    asl
+    rol ptr1 + 1
+    asl
+    rol ptr1 + 1
+    sta ptr1
+    lda #>COLOR_RAM
+    clc
+    adc ptr1 + 1
+    sta ptr1 + 1
+    txa
+    ldy #39
+:   sta (ptr1),y
+    dey
+    bpl :-
+    rts
+}

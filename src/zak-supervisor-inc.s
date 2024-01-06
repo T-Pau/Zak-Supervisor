@@ -1,8 +1,5 @@
-.ifndef HAD_ZAK_SUPERVISOR_INC
-.define HAD_ZAK_SUPERVISOR_INC
-
 ;  zak-supervisor.inc -- global defines
-;  Copyright (C) 2021 Dieter Baron
+;  Copyright (C) Dieter Baron
 ;
 ;  This file is part of Zak Supervisor, a Music Monitor for the Commodore 64.
 ;  The authors can be contacted at <zak-supervisor@tpau.group>.
@@ -28,13 +25,7 @@
 ;  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 ;  IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-.include "c64.inc"
-.include "cbm_kernal.inc"
-.include "defines.inc"
-
-.macpack cbm
-
-; DEBUG_DISPLAY = 1
+DEBUG_DISPLAY = 0 ; 1
 
 GETIN_CHECKED = $e124
 
@@ -43,50 +34,49 @@ COLOR_BACKGROUND = COLOR_BLACK
 COLOR_FOCUS = COLOR_WHITE
 CTRL_COLOR_FOCUS = CTRL_COLOR_WHITE
 
-COLOR_NORMAL = COLOR_MID_GRAY
+COLOR_NORMAL = COLOR_GREY_2
 CTRL_COLOR_NORMAL = CTRL_COLOR_MID_GRAY
 
-COLOR_DISABLED = COLOR_DARK_GRAY
+COLOR_DISABLED = COLOR_GREY_1
 
 COLOR_LINE1 = COLOR_RED
 COLOR_LINE1_FOCUS = COLOR_LIGHT_RED
-COLOR_LINE2 = COLOR_LIGHT_GRAY
+COLOR_LINE2 = COLOR_GREY_3
 COLOR_LINE2_FOCUS = COLOR_WHITE
 
+screen_address(screen, x_, y_) = screen + x_ + y_ * 40
+
 screen = $0400
-screen_monitor_current = screen + 33
-screen_monitor_1 = screen + 1 * 40 + 17
-screen_monitor_2 = screen + 2 * 40 + 17
-screen_monitor_3 = screen + 3 * 40 + 17
-screen_monitor_4 = screen + 4 * 40 + 17
-screen_monitor_5 = screen + 1 * 40 + 34
-screen_monitor_6 = screen + 2 * 40 + 34
-screen_monitor_7 = screen + 3 * 40 + 34
-screen_monitor_8 = screen + 4 * 40 + 34
-screen_monitor_running = screen + 11 * 40
-color_monitor_running = COLOR_RAM + 11 * 40
-screen_position_running = screen + 17 * 40 + 18
+screen_monitor_current = screen_address(screen, 33, 0)
+screen_monitor_1 = screen_address(screen, 17, 1)
+screen_monitor_2 = screen_address(screen, 17, 2)
+screen_monitor_3 = screen_address(screen, 17, 3)
+screen_monitor_4 = screen_address(screen, 17, 4)
+screen_monitor_5 = screen_address(screen, 34, 1)
+screen_monitor_6 = screen_address(screen, 34, 2)
+screen_monitor_7 = screen_address(screen, 34, 3)
+screen_monitor_8 = screen_address(screen, 34, 4)
+screen_monitor_running = screen_address(screen, 0, 11)
+color_monitor_running = screen_address(COLOR_RAM, 0, 11)
+screen_position_running = screen_address(screen, 18, 17)
 screen_monitor_page = screen + 1000 - 256
 color_monitor_page = COLOR_RAM + 1000 - 256
-screen_rastertime_current = screen + 8 * 40 + 18
-screen_rastertime_maximum = screen + 9 * 40 + 18
+screen_rastertime_current = screen_address(screen, 18, 8)
+screen_rastertime_maximum = screen_address(screen, 18, 9)
 
-screen_filename = screen + 9 * 40 + 11
+screen_filename = screen_address(screen, 11, 9)
 
 CHAR_CURSOR = $5f ; _
 
 
-.macro copy_screen source
-	lda #<source
-	sta ptr1
-	lda #>source
-	sta ptr1 + 1
-	lda #<screen
-	sta ptr2
-	lda #>screen
-	sta ptr2 + 1
-	jsr expand
-.endmacro
-
-
-.endif
+.macro copy_screen source {
+    lda #<source
+    sta ptr1
+    lda #>source
+    sta ptr1 + 1
+    lda #<screen
+    sta ptr2
+    lda #>screen
+    sta ptr2 + 1
+    jsr expand
+}

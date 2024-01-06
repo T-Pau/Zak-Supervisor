@@ -1,5 +1,5 @@
 ;  defines.inc -- Global definitions for Commodore 64.
-;  Copyright (C) 2021 Dieter Baron
+;  Copyright (C) Dieter Baron
 ;
 ;  This file is part of Zak Supervisor, a Music Monitor for the Commodore 64.
 ;  The authors can be contacted at <zak-supervisor@tpau.group>.
@@ -24,6 +24,8 @@
 ;  IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 ;  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 ;  IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+CLRSCR = $E544
 
 CTRL_COLOR_WHITE = $05
 CTRL_DISABLE_CHARSET_SWITCH = $08
@@ -58,27 +60,6 @@ CTRL_CURSOR_LEFT = $9D
 CTRL_COLOR_YELLOW = $9E
 CTRL_COLOR_CYAN = $9F
 
-COLOR_BLACK = 0
-COLOR_WHITE = 1
-COLOR_RED = 2
-COLOR_CYAN = 3
-COLOR_VIOLET = 4
-COLOR_PURPLE = COLOR_VIOLET
-COLOR_GREEN = 5
-COLOR_BLUE = 6
-COLOR_YELLOW = 7
-COLOR_ORANGE = 8
-COLOR_BROWN = 9
-COLOR_LIGHT_RED = 10
-COLOR_DARK_GRAY = 11
-COLOR_DARK_GREY = COLOR_DARK_GRAY
-COLOR_MID_GRAY = 12
-COLOR_MID_GREY = COLOR_MID_GRAY
-COLOR_LIGHT_GREEN = 13
-COLOR_LIGHT_BLUE = 14
-COLOR_LIGHT_GRAY = 15
-COLOR_LIGHT_GREY = COLOR_LIGHT_GRAY
-
 COLOR_RAM = $d800
 
 ST = $90
@@ -87,12 +68,13 @@ LAST_DEVICE = $ba
 ENDIRQ = $ea31
 RESET = $fce2
 
+.section zero_page
+
 ; main loop
-tmp1 = $02
-ptr1 = $fb
-ptr2 = $fd
+tmp1 .reserve 1
+ptr1 .reserve 2
+ptr2 .reserve 2
 
 ; interrupt
-ptr3 = $55
-ptr4 = $71
-
+ptr3 .reserve 2
+ptr4 .reserve 2

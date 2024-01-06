@@ -1,5 +1,5 @@
 ;  expand.s -- expand run length encoded data.
-;  Copyright (C) 2021 Dieter Baron
+;  Copyright (C) Dieter Baron
 ;
 ;  This file is part of Zak Supervisor, a Music Monitor for the Commodore 64.
 ;  The authors can be contacted at <zak-supervisor@tpau.group>.
@@ -25,50 +25,43 @@
 ;  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 ;  IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-.export expand
+.section code
 
-.autoimport +
-
-.macpack utility
-
-.include "defines.inc"
-
-expand:
-.scope
-	ldy #0
+expand {
+    ldy #0
 loop:
-	lda (ptr1),y
-	bmi runlength
-	sta (ptr2),y
-	iny
-	bne loop
-	inc ptr1 + 1
-	inc ptr2 + 1
-	bne loop
+    lda (ptr1),y
+    bmi runlength
+    sta (ptr2),y
+    iny
+    bne loop
+    inc ptr1 + 1
+    inc ptr2 + 1
+    bne loop
 runlength:
-	cmp #$ff
-	bne :+
-	rts
-:	and #$7f
-	sta tmp1
-	tya
-	clc
-	adc_16 ptr2
-	tya
-	sec
-	adc_16 ptr1
-	ldy #0
-	lda (ptr1),y
-	ldy tmp1
-	dey
+    cmp #$ff
+    bne :+
+    rts
+:   and #$7f
+    sta tmp1
+    tya
+    clc
+    adc_16 ptr2
+    tya
+    sec
+    adc_16 ptr1
+    ldy #0
+    lda (ptr1),y
+    ldy tmp1
+    dey
 runlength_loop:
-	sta (ptr2),y
-	dey
-	bpl runlength_loop
-	lda tmp1
-	clc
-	adc_16 ptr2
-	inc_16 ptr1
-	ldy #0
-	beq loop
-.endscope
+    sta (ptr2),y
+    dey
+    bpl runlength_loop
+    lda tmp1
+    clc
+    adc_16 ptr2
+    inc_16 ptr1
+    ldy #0
+    beq loop
+}

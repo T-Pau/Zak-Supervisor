@@ -1,5 +1,5 @@
 ;  utility.mac -- Utility macro package.
-;  Copyright (C) 2020 Dieter Baron
+;  Copyright (C) Dieter Baron
 ;
 ;  This file is part of Zak Supervisor, a Music Monitor for the Commodore 64.
 ;  The authors can be contacted at <zak-supervisor@tpau.group>.
@@ -25,86 +25,80 @@
 ;  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
 ;  IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-.macro store_word value, address
-	lda #<(value)
-	sta address
-	lda #>(value)
-	sta address + 1
-.endmacro
+.macro store_word value, address {
+    lda #<value
+    sta address
+    lda #>value
+    sta address + 1
+}
 
-.macro adc_16 address
-.scope
-	adc address
-	sta address
-	bcc no_carry
-	inc address + 1
-no_carry:
-.endscope
-.endmacro
+.macro adc_16 address {
+    adc address
+    sta address
+    bcc :+
+    inc address + 1
+:
+}
 
-.macro inc_16 address
-.scope
-	inc address
-	bne no_carry
-	inc address + 1
-no_carry:
-.endscope
-.endmacro
+.macro inc_16 address {
+    inc address
+    bne :+
+    inc address + 1
+:
+}
 
-.macro add_word address, value
-	clc
-	lda address
-	adc #<(value)
-	sta address
-.if value < 256
-.scope
-	bcc end_add_word
-	inc address + 1
-end_add_word:
-.endscope
-.else
-	lda address + 1
-	adc #>(value)
-	sta address + 1
-.endif
-.endmacro
+.macro add_word address, value {
+    clc
+    lda address
+    adc #<value
+    sta address
+.if value < 256 {
+    bcc :+
+    inc address + 1
+    }
+.else {
+    lda address + 1
+    adc #>value
+    sta address + 1
+}
+:
+}
 
-.macro subtract_word address, value
-	sec
-	lda address
-	sbc #<(value)
-	sta address
-.if value < 256
-.scope
-	bcs subtract_word_end
-	dec address + 1
-subtract_word_end:
-.endscope
-.else
-	lda address + 1
-	sbc #>(value)
-	sta address + 1
-.endif
-.endmacro
+.macro subtract_word address, value {
+    sec
+    lda address
+    sbc #<value
+    sta address
+    .if value < 256 {
+        bcs :+
+        dec address + 1
+    }
+    .else {
+        lda address + 1
+        sbc #>value
+        sta address + 1
+    :
+    }
+}
 
-.macro memcpy destination, source, length
-	store_word destination, ptr2
-	store_word source, ptr1
-	store_word length, ptr3
-	jsr memcpy
-.endmacro
+;.macro memcpy destination, source, length {
+;    store_word destination, ptr2
+;    store_word source, ptr1
+;    store_word length, ptr3
+;    jsr memcpy
+;}
 
-.macro memset destination, value, length
-	store_word destination, ptr2
-	store_word length, ptr3
-	lda #(value)
-	jsr memset
-.endmacro
+;.macro memset destination, value, length {
+;    store_word destination, ptr2
+;    store_word length, ptr3
+;    lda #value
+;    jsr memset
+;}
 
-.macro memset_if destination, old_value, new_value, length
-	store_word destination, ptr2
-	store_word length, ptr3
-	ldx #(new_value)
-	lda #(old_value)
-	jsr memset_if
-.endmacro
+;.macro memset_if destination, old_value, new_value, length {
+;    store_word destination, ptr2
+;    store_word length, ptr3
+;    ldx #new_value
+;    lda #old_value
+;    jsr memset_if
+;}

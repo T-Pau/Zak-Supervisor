@@ -60,4 +60,4 @@ Cursor Keys: Select current address within the current page.
 
 # Building Zak Supervisor
 
-Zak Supervisor is written in CC65 assembler. To build it, you need [cc65](https://cc65.github.io), [pucrunch](https://github.com/mist64/pucrunch), GNU make, and Perl. You also need the `c1541` utility from [Vice](http://vice-emu.sourceforge.net).
+Zak Supervisor is written in [Accelerate](https://accelerate.tpau.group/) assembler. To build it, you also need, [pucrunch](https://github.com/mist64/pucrunch), GNU make, and Perl. You also need the `c1541` utility from [Vice](http://vice-emu.sourceforge.net).

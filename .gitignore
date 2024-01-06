@@ -11,3 +11,4 @@
 /src/docs.bin
 /src/zak-supervisor-docs.prg
 Zak-Supervisor-*.zip
+/build

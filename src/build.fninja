@@ -1,0 +1,37 @@
+rule link
+  depfile = $out.d
+  command = xlr8 -M $out.d --symbol-map $out.sym --target zak-supervisor.target -o $out $in c64.lib cbm.lib
+
+rule pucrunch
+  command = pucrunch -ffast -c64 -x12800 $in $out
+
+rule cat
+  command = cat $in > $out
+
+rule screen
+  command = perl screen.pl -c $in > $out || (rm $out; exit 1)
+
+rule mkd64
+  depfile = $out.d
+  command = perl mkd64 $out "$name" $in
+
+rule vice-ll
+  command = awk '{print "al "$$2" ."$$4}' $in > $out
+
+build zak-supervisor.d64: mkd64 filelist | zak-supervisor.prg zak-supervisor-run.prg zak-supervisor-docs.prg
+  name = zak$ supervisor$ 2,21
+
+build zak-supervisor.prg | zak-supervisor.prg.sym: link defines.s expand.s graphics.s input.s output.s utility.s zak-supervisor-inc.s zak-supervisor.s
+
+build zak-supervisor-run.prg: pucrunch zak-supervisor.prg
+
+build zak-supervisor-docs.prg: cat mm2.prg docs.bin
+
+build zak-supervisor.prg.ll: vice-ll zak-supervisor.prg.sym
+
+build docs.bin: screen docs.scr
+build help.bin: screen help.scr
+build init.bin: screen init.scr
+build monitor.bin: screen monitor.scr
+
+default zak-supervisor.d64
