@@ -1,6 +1,6 @@
 rule link
   depfile = $out.d
-  command = xlr8 -M $out.d --symbol-map $out.sym --target zak-supervisor.target -o $out $in c64.lib cbm.lib
+  command = xlr8 -M $out.d --symbol-map $out.sym --target {{zak-supervisor.target}} -o $out $in c64.lib cbm.lib
 
 rule pucrunch
   command = pucrunch -ffast -c64 -x12800 $in $out
@@ -9,11 +9,11 @@ rule cat
   command = cat $in > $out
 
 rule screen
-  command = perl screen.pl -c $in > $out || (rm $out; exit 1)
+  command = perl {{screen.pl}} -c $in > $out || (rm $out; exit 1)
 
 rule mkd64
   depfile = $out.d
-  command = perl mkd64 $out "$name" $in
+  command = perl {{mkd64}} $out "$name" $in
 
 rule vice-ll
   command = awk '{print "al "$$2" ."$$4}' $in > $out

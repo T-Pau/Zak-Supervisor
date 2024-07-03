@@ -52,7 +52,7 @@ start {
     jsr CLRSCR
     lda #CTRL_COLOR_FOCUS
     jsr CHROUT
-    ldx #VIC_ADDRESS(screen, charset)
+    ldx #VIC_VIDEO_ADDRESS(screen, charset)
     stx VIC_VIDEO_ADDRESS
     ldx #COLOR_BACKGROUND
     stx VIC_BORDER_COLOR
