@@ -1,27 +1,37 @@
+include ../Toolkit/fast-ninja/scripts.fninja
+include ../Toolkit/fast-ninja/xlr8.fninja
+
+sources :=
+    defines.s
+    expand.s
+    graphics.s
+    input.s
+    output.s
+    utility.s
+    zak-supervisor-inc.s
+    zak-supervisor.s
+
 rule link
-  depfile = $out.d
-  command = xlr8 -M $out.d --symbol-map $out.sym --target {{zak-supervisor.target}} -o $out $in c64.lib cbm.lib
+    depfile = $out.d
+    command = xlr8 -M $out.d --symbol-map $out.sym --target {{zak-supervisor.target}} -o $out $in c64.lib cbm.lib
 
 rule pucrunch
-  command = pucrunch -ffast -c64 -x12800 $in $out
+    command = pucrunch -ffast -c64 -x12800 $in $out
 
 rule cat
-  command = cat $in > $out
+    command = cat $in > $out
 
 rule screen
-  command = perl {{screen.pl}} -c $in > $out || (rm $out; exit 1)
-
-rule mkd64
-  depfile = $out.d
-  command = perl {{mkd64}} $out "$name" $in
+    command = perl {{screen.pl}} -c $in > $out || (rm $out; exit 1)
 
 rule vice-ll
-  command = awk '{print "al "$$2" ."$$4}' $in > $out
+    command = awk '{print "al "$$2" ."$$4}' $in > $out
 
-build zak-supervisor.d64: mkd64 filelist | zak-supervisor.prg zak-supervisor-run.prg zak-supervisor-docs.prg
-  name = zak$ supervisor$ 2,21
+build zak-supervisor.d64: create-disk filelist | zak-supervisor.prg zak-supervisor-run.prg zak-supervisor-docs.prg
 
-build zak-supervisor.prg | zak-supervisor.prg.sym: link defines.s expand.s graphics.s input.s output.s utility.s zak-supervisor-inc.s zak-supervisor.s
+build zak-supervisor.prg | zak-supervisor.prg.sym: link $sources
+  target = {{zak-supervisor.target}}
+  libs = c64.lib cbm.lib
 
 build zak-supervisor-run.prg: pucrunch zak-supervisor.prg
 
