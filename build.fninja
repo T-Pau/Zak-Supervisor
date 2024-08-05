@@ -1,10 +1,22 @@
 VERSION = 2.0
 
-rule zip
-  command = zip -9jq $out $in
+distfile := Zak-Supervisor-$VERSION.zip
 
-build Zak-Supervisor-$VERSION.zip: zip README.md init-screen.png monitoring-screen.png src/zak-supervisor.d64
+built_dist_files :=
+    src/zak-supervisor.d64
 
-build dist: phony Zak-Supervisor-$VERSION.zip
+dist_files :=
+    README.md
+    init-screen.png
+    monitoring-screen.png
+
+rule create-zip
+    command = {{$top_source_directory/Toolkit/bin/create-zip}} -M $depfile $flags $out $in
+    depfile = .dep.$out
+
+build $distfile: create-zip $dist_files
+    flags = --strip $top_source_directory --strip src
+
+build dist: phony $distfile
 
 subninja src/build.fninja

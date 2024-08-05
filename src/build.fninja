@@ -11,10 +11,6 @@ sources :=
     zak-supervisor-inc.s
     zak-supervisor.s
 
-rule link
-    depfile = $out.d
-    command = xlr8 -M $out.d --symbol-map $out.sym --target {{zak-supervisor.target}} -o $out $in c64.lib cbm.lib
-
 rule pucrunch
     command = pucrunch -ffast -c64 -x12800 $in $out
 
