@@ -26,7 +26,7 @@ program_end = $7fff
 }
 
 .section charset {
-    address: $3000 - $3200
+    address: $3800 - $39ff
 }
 
 .section reserved {
