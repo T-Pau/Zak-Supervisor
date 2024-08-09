@@ -24,6 +24,7 @@ rule vice-ll
     command = awk '{print "al "$$2" ."$$4}' $in > $out
 
 build zak-supervisor.d64: create-disk filelist | zak-supervisor.prg zak-supervisor-run.prg zak-supervisor-docs.prg
+    flags = -I$build_directory
 
 build zak-supervisor.prg | zak-supervisor.prg.sym: link $sources
   target = {{zak-supervisor.target}}
